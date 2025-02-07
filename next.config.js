@@ -11,7 +11,9 @@ const nextConfig = {
         ]
     },
     api: {
-        bodyParser: false, // Disables body parsing, as we're handling raw files
+        bodyParser: {
+            sizeLimit: '50mb'
+        },
         responseLimit: '50mb',
     },
 }
