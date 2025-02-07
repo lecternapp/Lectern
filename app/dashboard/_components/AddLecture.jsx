@@ -9,6 +9,13 @@ export default function AddLecture() {
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
+        
+        // Check file size (50MB in bytes)
+        if (selectedFile && selectedFile.size > 50 * 1024 * 1024) {
+            setError('File size exceeds 50MB limit');
+            return;
+        }
+        
         setFile(selectedFile);
         setError('');
     };
@@ -60,6 +67,9 @@ export default function AddLecture() {
                             accept=".ppt,.pptx,.pdf,.doc,.docx"
                             className="block w-full mt-1"
                         />
+                        <span className="text-sm text-gray-500">
+                            Maximum file size: 50MB
+                        </span>
                     </label>
                 </div>
 

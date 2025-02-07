@@ -1,4 +1,5 @@
 import officeParser from 'officeparser';
+import { NextResponse } from 'next/server';
 
 const config = {
     newlineDelimiter: " ",  // Separate new lines with a space instead of the default \n.
@@ -27,15 +28,34 @@ export function searchForTermInOfficeFile(searchterm, filepath) {
         .then(data => data.indexOf(searchterm) != -1);
 }
 
+// Maximum file size (in bytes) - adjust as needed
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 export async function POST(request) {
     try {
+        if (!request.body) {
+            return NextResponse.json(
+                { error: 'No file uploaded' },
+                { status: 400 }
+            );
+        }
+
+        const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+        if (contentLength > MAX_FILE_SIZE) {
+            return NextResponse.json(
+                { error: 'File too large. Maximum size is 50MB' },
+                { status: 413 }
+            );
+        }
+
         const formData = await request.formData();
         const file = formData.get('file');
 
         if (!file) {
-            return new Response(JSON.stringify({ error: 'No file uploaded' }), { 
-                status: 400 
-            });
+            return NextResponse.json(
+                { error: 'No file uploaded' },
+                { status: 400 }
+            );
         }
 
         // Convert file to buffer for officeparser
@@ -45,17 +65,16 @@ export async function POST(request) {
         const data = await officeParser.parseOfficeAsync(buffer, config);
         const parsedText = data + " look, I can parse a powerpoint file";
 
-        return new Response(JSON.stringify({ 
+        return NextResponse.json({ 
             success: true, 
             text: parsedText 
-        }));
+        });
 
     } catch (error) {
         console.error('Upload error:', error);
-        return new Response(JSON.stringify({ 
-            error: 'Failed to process file' 
-        }), { 
-            status: 500 
-        });
+        return NextResponse.json(
+            { error: 'Failed to process file' },
+            { status: 500 }
+        );
     }
 }
