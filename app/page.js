@@ -8,6 +8,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
+
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col items-center justify-center text-center bg-gradient-to-r from-blue-900 to-indigo-800 text-white">
         <div className="absolute inset-0 bg-opacity-50"></div>

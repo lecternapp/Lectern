@@ -13,16 +13,30 @@
     "@radix-ui/react-slot": "^1.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jszip": "^3.10.1",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.471.1",
+    "mammoth": "^1.9.0",
+    "mime": "^4.0.6",
     "next": "^15.1.4",
+    "office-text-extractor": "^3.0.3",
+    "office-to-pdf": "^4.0.0",
+    "officeparser": "^5.1.1",
+    "pdfjs-dist": "^4.10.38",
+    "pptx-parser": "^1.1.7-beta.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.4.0",
+    "react-pdftotext": "^1.3.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "textract": "^0.20.0",
+    "uuid": "^11.0.5",
+    "xlsx": "^0.20.2",
+    "xmldom": "^0.6.0"
   },
   "devDependencies": {
-    "postcss": "^8",
+    "postcss": "^8.5.1",
     "tailwindcss": "^3.4.1"
   }
 }
