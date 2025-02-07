@@ -1,7 +1,7 @@
 import officeParser from 'officeparser';
 import { NextResponse } from 'next/server';
 
-const config = {
+const parserConfig = {
     newlineDelimiter: " ",  // Separate new lines with a space instead of the default \n.
     ignoreNotes: true       // Ignore notes while parsing presentation files like pptx or odp.
 }
@@ -13,7 +13,7 @@ function callSomeOtherFunction(text) {
 
 export async function parseDocument(filepath) {
     try {
-        const data = await officeParser.parseOfficeAsync(filepath, config);
+        const data = await officeParser.parseOfficeAsync(filepath, parserConfig);
         const newText = data + " look, I can parse a powerpoint file";
         return callSomeOtherFunction(newText);
     } catch (err) {
@@ -62,7 +62,7 @@ export async function POST(request) {
         const buffer = Buffer.from(await file.arrayBuffer());
         
         // Parse the file
-        const data = await officeParser.parseOfficeAsync(buffer, config);
+        const data = await officeParser.parseOfficeAsync(buffer, parserConfig);
         const parsedText = data + " look, I can parse a powerpoint file";
 
         return NextResponse.json({ 
