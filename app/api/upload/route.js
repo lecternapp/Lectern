@@ -1,5 +1,12 @@
 import officeParser from 'officeparser';
 import { NextResponse } from 'next/server';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 const parserConfig = {
     newlineDelimiter: " ",  // Separate new lines with a space instead of the default \n.
@@ -28,8 +35,8 @@ export function searchForTermInOfficeFile(searchterm, filepath) {
         .then(data => data.indexOf(searchterm) != -1);
 }
 
-// Maximum file size (in bytes) - adjust as needed
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+// Maximum file size (in bytes)
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB for video files
 
 export async function POST(request) {
     try {
@@ -40,16 +47,9 @@ export async function POST(request) {
             );
         }
 
-        const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
-        if (contentLength > MAX_FILE_SIZE) {
-            return NextResponse.json(
-                { error: 'File too large. Maximum size is 50MB' },
-                { status: 413 }
-            );
-        }
-
         const formData = await request.formData();
         const file = formData.get('file');
+        const fileType = formData.get('fileType');
 
         if (!file) {
             return NextResponse.json(
@@ -58,22 +58,40 @@ export async function POST(request) {
             );
         }
 
-        // Convert file to buffer for officeparser
-        const buffer = Buffer.from(await file.arrayBuffer());
-        
-        // Parse the file
-        const data = await officeParser.parseOfficeAsync(buffer, parserConfig);
-        const parsedText = data + " look, I can parse a powerpoint file";
+        if (fileType === 'video') {
+            console.log("Processing video");
+            
+            // Upload video to Firebase Storage
+            const storageRef = ref(storage, `videos/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const videoUrl = await getDownloadURL(storageRef);
 
-        return NextResponse.json({ 
-            success: true, 
-            text: parsedText 
-        });
+            // Get video transcription using OpenAI
+            const transcription = await openai.audio.transcriptions.create({
+                file: file,
+                model: "whisper-1",
+            });
 
+            return NextResponse.json({
+                type: 'video',
+                videoUrl,
+                transcription: transcription.text
+            });
+        } else {
+            // Handle document processing
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const parsedText = await parseDocument(buffer);
+
+            return NextResponse.json({
+                type: 'document',
+                text: parsedText
+            });
+        }
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json(
-            { error: 'Failed to process file' },
+            { error: `Failed to process file: ${error.message}` },
             { status: 500 }
         );
     }
@@ -82,7 +100,7 @@ export async function POST(request) {
 export const config = {
     api: {
         bodyParser: {
-            sizeLimit: '50mb'
+            sizeLimit: '100mb'
         }
     }
 };
