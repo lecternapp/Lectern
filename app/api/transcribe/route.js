@@ -1,38 +1,64 @@
-import fs from "fs";
-import OpenAI from "openai";
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import { promisify } from 'util';
-import stream from 'stream';
+// import { NextResponse } from 'next/server';
+// import OpenAI from "openai";
+// import ffmpeg from 'fluent-ffmpeg';
+// import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+// import fs from 'fs';
+// import path from 'path';
 
-// Configure ffmpeg to use the installed version
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+// // Configure ffmpeg to use the installed version
+// ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
-const pipeline = promisify(stream.pipeline);
-const openai = new OpenAI();
+// const openai = new OpenAI({
+//     apiKey: process.env.OPENAI_API_KEY
+// });
 
-async function convertToMp3(inputPath, outputPath) {
-    return new Promise((resolve, reject) => {
-        ffmpeg(inputPath)
-            .toFormat('mp3')
-            .on('error', reject)
-            .on('end', resolve)
-            .save(outputPath);
-    });
-}
+// async function convertToMp3(inputPath, outputPath) {
+//     return new Promise((resolve, reject) => {
+//         ffmpeg(inputPath)
+//             .toFormat('mp3')
+//             .audioCodec('libmp3lame')
+//             .on('error', reject)
+//             .on('end', resolve)
+//             .save(outputPath);
+//     });
+// }
 
-// Convert MP4 to MP3 and then transcribe
-const inputPath = "app/uploads/small.mp4";
-const outputPath = "app/uploads/small.mp3";
+// export async function GET(request) {
+//     try {
+//         const inputPath = path.join(process.cwd(), 'app/uploads/small.mp4');
+//         const outputPath = path.join(process.cwd(), 'app/uploads/small.mp3');
 
-await convertToMp3(inputPath, outputPath);
+//         if (!fs.existsSync(inputPath)) {
+//             return NextResponse.json(
+//                 { error: 'Test file not found' },
+//                 { status: 404 }
+//             );
+//         }
 
-const transcription = await openai.audio.transcriptions.create({
-    file: fs.createReadStream(outputPath),
-    model: "whisper-1",
-});
+//         console.log('Converting to MP3...');
+//         await convertToMp3(inputPath, outputPath);
+//         console.log('Conversion complete');
 
-console.log(transcription.text);
+//         console.log('Starting transcription...');
+//         const transcription = await openai.audio.transcriptions.create({
+//             file: fs.createReadStream(outputPath),
+//             model: "whisper-1",
+//         });
+//         console.log('Transcription complete');
 
-// Clean up the temporary MP3 file
-fs.unlinkSync(outputPath);
+//         // Clean up the temporary MP3 file
+//         fs.unlinkSync(outputPath);
+
+//         return NextResponse.json({
+//             success: true,
+//             transcription: transcription.text
+//         });
+
+//     } catch (error) {
+//         console.error('Error:', error);
+//         return NextResponse.json(
+//             { error: error.message },
+//             { status: 500 }
+//         );
+//     }
+// }
