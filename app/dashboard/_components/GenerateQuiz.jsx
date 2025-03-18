@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 
-export default function GenerateFlashcards() {
+export default function GenerateQuiz() {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleGenerateFlashcards = async () => {
+    const handleGenerateQuiz = async () => {
         setLoading(true);
 
         try {
-            const response = await fetch("/api/flashcards", {
+            const response = await fetch("/api/quizzes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text }),
@@ -19,10 +19,10 @@ export default function GenerateFlashcards() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "Failed to generate flashcards.");
+                throw new Error(data.error || "Failed to generate quiz.");
             }
 
-            setText(JSON.stringify(data.flashcards, null, 2));
+            setText(JSON.stringify(data.quiz, null, 2));
         } catch (err) {
             setText(`Error: ${err.message}`);
         } finally {
@@ -41,10 +41,10 @@ export default function GenerateFlashcards() {
             />
             <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
-                onClick={handleGenerateFlashcards}
+                onClick={handleGenerateQuiz}
                 disabled={loading || !text.trim()}
             >
-                {loading ? "Generating..." : "Generate Flashcards"}
+                {loading ? "Generating..." : "Generate Quiz"}
             </button>
         </div>
     );
