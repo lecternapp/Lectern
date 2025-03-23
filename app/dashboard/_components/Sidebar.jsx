@@ -20,9 +20,9 @@ function Sidebar() {
     },
     {
         id: 4,
-        name: 'My Summaries',
+        name: 'My Content',
         icon: <AiOutlineFileText />,
-        path: '/dashboard/summaries'
+        path: '/dashboard/content'
       },
     {
       id: 2,
