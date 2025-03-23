@@ -1,10 +1,13 @@
-import React from 'react'
+import React from "react";
+import { IconClipboard, IconExternalLink, IconDots } from '@tabler/icons-react';
 
-function page() {
+
+function Page() {
   return (
-    <div> hi
+    <div>
+      hi
     </div>
-  )
+  );
 }
 
-export default page
+export default Page;
