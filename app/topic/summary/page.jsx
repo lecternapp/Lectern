@@ -26,7 +26,7 @@ const dummySummary = [
 
 function Page() {
   return (
-    <div className="max-w-3xl mx-auto items-start pt-8 bg-white rounded-lg">
+    <div className="max-w-3xl mx-auto items-start pt-8 pb-10 bg-white rounded-lg">
       <div className="space-y-6">
         {dummySummary.map((section, index) => (
           <div key={index} className="p-4 border border-gray-300 rounded-lg">
