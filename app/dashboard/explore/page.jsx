@@ -2,17 +2,18 @@ import React from 'react';
 import Card from './_components/Card';
 import Link from 'next/link';
 import { AiOutlineFileText } from "react-icons/ai";
+import { IconClick } from '@tabler/icons-react';
 
 const cardNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-const ContentPage = () => {
+const ExplorePage = () => {
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   return (
     <div>
       <header className="text-left">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white inline-flex items-center p-4 gap-2">
-            My Content <AiOutlineFileText />
+            Explore recently created content <IconClick />
         </h1>
       </header>
 
@@ -31,4 +32,4 @@ const ContentPage = () => {
   );
 };
 
-export default ContentPage;
+export default ExplorePage;
