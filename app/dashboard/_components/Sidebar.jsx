@@ -2,7 +2,7 @@
 import React, { useContext } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { AiOutlineHome,  AiOutlineCompass, AiOutlineRocket,AiOutlineFileText, AiOutlineLogout } from "react-icons/ai";
+import { AiOutlineHome,  AiOutlineCompass,AiOutlineFileText, AiOutlineLogout } from "react-icons/ai";
 import { usePathname } from 'next/navigation';
 import { LuLectern } from "react-icons/lu";
 import { useClerk } from '@clerk/clerk-react';
