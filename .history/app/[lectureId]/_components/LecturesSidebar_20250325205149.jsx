@@ -1,41 +1,42 @@
 'use client'
 import React, { useContext } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { AiOutlineHome,  AiOutlineCompass, AiOutlineRocket,AiOutlineFileText, AiOutlineLogout } from "react-icons/ai";
+import { AiOutlineHome,  AiOutlineCompass, AiOutlineFileText, AiOutlineLogout } from "react-icons/ai";
+import { IconVocabulary, IconCards, IconMessage2Question, IconArrowBack } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import { LuLectern } from "react-icons/lu";
 import { useClerk } from '@clerk/clerk-react';
-function Sidebar() {
+import { Icon } from 'lucide-react';
+function LectureSidebar() {
 
-  const { signOut } = useClerk(); // Clerk's signOut method
+  const { signOut } = useClerk();
 
   const path = usePathname()
   const Menu =[
     {
       id: 1,
-      name: 'Home',
-      icon: <AiOutlineHome />,
-      path: '/dashboard'
+      name: 'Summary',
+      icon: <IconVocabulary />,
+      path: '/topic/summary'
     },
     {
-      id: 4,
-      name: 'My Lectures',
-      icon: <AiOutlineFileText />,
-      path: '/dashboard/lectures'   
-    },
+        id: 4,
+        name: 'Flashcards',
+        icon: <IconCards />,
+        path: '/topic/flashcards'
+      },
     {
       id: 2,
-      name: 'Explore',
-      icon: <AiOutlineCompass />,
-      path: '/dashboard/explore'
+      name: 'Quiz',
+      icon: <IconMessage2Question />,
+      path: '/topic/quiz'
     },
 
     {
       id: 8,
-      name: 'Log Out',
-      icon: <AiOutlineLogout />,
-      path: '/sign-out'
+      name: 'Dashboard',
+      icon: <IconArrowBack />,
+      path: '/dashboard'
     }
   ];
   const handleLogout = async () => {
@@ -88,4 +89,4 @@ function Sidebar() {
   )
 }
 
-export default Sidebar
+export default <Lecture></Lecture>Sidebar

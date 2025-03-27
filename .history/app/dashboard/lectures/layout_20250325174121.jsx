@@ -1,7 +1,7 @@
 // app/lectures/layout.jsx
 'use client';
 
-import Header from '../dashboard/_components/Header';
+import Header from '../_components/Header';
 
 export default function LecturesLayout({ children }) {
   return (

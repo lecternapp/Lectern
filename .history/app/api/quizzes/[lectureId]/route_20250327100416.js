@@ -1,8 +1,8 @@
-// app/api/quizzes/[lectureId]/route.js
+// app/api/quizzes/route.js
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-export async function POST(req, { params }) {
+export async function POST(req) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -11,10 +11,9 @@ export async function POST(req, { params }) {
     }
 
     const { text } = await req.json();
-    const { lectureId } = params;
 
-    if (!text || !lectureId) {
-      return NextResponse.json({ error: "Missing lectureId or text" }, { status: 400 });
+    if (!text) {
+      return NextResponse.json({ error: "No text provided" }, { status: 400 });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -55,16 +54,12 @@ export async function POST(req, { params }) {
       contents: [{ role: "user", parts: [{ text }] }],
     });
 
-    const jsonText = await result.response.text();
-    const quiz = JSON.parse(jsonText);
+    const jsonResponse = await result.response.text();
 
-    return NextResponse.json({ success: true, lectureId, quiz });
+    return NextResponse.json({ success: true, quiz: JSON.parse(jsonResponse) });
 
   } catch (error) {
-    console.error("Quiz generation error:", error);
-    return NextResponse.json(
-      { error: error?.message || "An unexpected error occurred" },
-      { status: 500 }
-    );
+    console.error("Error:", error);
+    return NextResponse.json({ error: error?.message || "An unexpected error occurred" }, { status: 500 });
   }
 }
