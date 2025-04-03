@@ -71,7 +71,8 @@ export default function FlashcardsPage() {
       ) : (
         <>
           <div className="bg-white p-10 rounded-lg shadow border text-xl font-semibold text-gray-700">
-            {`🎉 You've reached the end of the flashcards!`}
+          <p>{"You&apos;ve reached the end of the flashcards!"}</p>
+
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
