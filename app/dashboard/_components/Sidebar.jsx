@@ -19,12 +19,11 @@ function Sidebar() {
       path: '/dashboard'
     },
     {
-      id: 4,
-      name: 'My Lectures',
-      icon: <AiOutlineFileText />,
-      path: '/dashboard/lectures'   
-    },
-
+        id: 4,
+        name: 'My Summaries',
+        icon: <AiOutlineFileText />,
+        path: '/dashboard/summaries'
+      },
     {
       id: 2,
       name: 'Explore',

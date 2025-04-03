@@ -9,7 +9,7 @@ const outfit = Outfit({
 
 export const metadata = {
   title: "Lectern - AI Learning Assistant",
-  description: " you into clear knowledge with AI",
+  description: "Transform your study notes into clear knowledge with AI",
 };
 
 export default function RootLayout({ children }) {
