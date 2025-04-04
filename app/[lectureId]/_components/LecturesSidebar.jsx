@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IconVocabulary, IconCards, IconMessage2Question, IconArrowBack } from '@tabler/icons-react';
+import { IconVocabulary, IconCards, IconMessage2Question, IconArrowBack, IconMessageChatbot } from '@tabler/icons-react';
 import { LuLectern } from 'react-icons/lu';
 
 export default function LectureToolsSidebar() {
@@ -27,6 +27,11 @@ export default function LectureToolsSidebar() {
       name: 'Quiz',
       icon: <IconMessage2Question />,
       path: `/${lectureId}/quiz`,
+    },
+    {
+      name: 'Chat',
+      icon: <IconMessageChatbot />,
+      path: `/${lectureId}/chat`,
     },
     {
       name: 'Back to Dashboard',
