@@ -20,18 +20,23 @@ function TopicSidebar() {
       path: '/topic/summary'
     },
     {
-        id: 4,
-        name: 'Flashcards',
-        icon: <IconCards />,
-        path: '/topic/flashcards'
-      },
+      id: 4,
+      name: 'Flashcards',
+      icon: <IconCards />,
+      path: '/topic/flashcards'
+    },
     {
       id: 2,
       name: 'Quiz',
       icon: <IconMessage2Question />,
       path: '/topic/quiz'
     },
-
+    {
+      id: 9,
+      name: 'Chat',
+      icon: <AiOutlineFileText />, // You can change this icon if you prefer a different one
+      path: '/topic/chat'
+    },
     {
       id: 8,
       name: 'Dashboard',
@@ -39,6 +44,7 @@ function TopicSidebar() {
       path: '/dashboard'
     }
   ];
+  
   const handleLogout = async () => {
     try {
       await signOut(); // Sign out the user using Clerk
