@@ -8,9 +8,9 @@ function page() {
   return (
     <div>
         <AddLecture/>
-        <GenerateFlashcards/>
+        {/* <GenerateFlashcards/>
         <GenerateQuiz/>
-        <GenerateSummary/>
+        <GenerateSummary/> */}
     </div>
   )
 }

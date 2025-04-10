@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IconVocabulary, IconCards, IconMessage2Question, IconArrowBack } from '@tabler/icons-react';
+import { IconVocabulary, IconCards, IconMessage2Question, IconArrowBack, IconMessageCircleQuestion} from '@tabler/icons-react';
 import { LuLectern } from 'react-icons/lu';
 
 export default function LectureToolsSidebar() {
@@ -17,6 +17,11 @@ export default function LectureToolsSidebar() {
       name: 'Summary',
       icon: <IconVocabulary />,
       path: `/${lectureId}/summary`,
+    },
+    {
+      name: 'Chat',
+      icon: <IconMessageCircleQuestion />,
+      path: `/${lectureId}/chat`,
     },
     {
       name: 'Flashcards',
@@ -39,7 +44,11 @@ export default function LectureToolsSidebar() {
     <div className="fixed h-full w-64 p-5 shadow-md bg-white border-r z-20">
       <div className="flex items-center mb-6">
         <LuLectern size={32} className="text-primary" />
-        <span className="ml-2 text-xl font-bold text-primary">Lectern</span>
+        <span className="ml-2 text-xl font-bold text-primary">
+          <Link href="/dashboard">
+            Lectern
+          </Link>
+        </span>
       </div>
       <hr className="mb-6" />
 
