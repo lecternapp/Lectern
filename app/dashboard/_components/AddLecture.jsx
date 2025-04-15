@@ -3,12 +3,16 @@ import { useState } from 'react';
 import { CloudArrowUpIcon, DocumentTextIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import { useUser } from '@clerk/nextjs';
 
-export default function AddLecture() {
+export default function AddLecture()  {
     const [file, setFile] = useState(null);
     const [summary, setSummary] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const { user } = useUser();
+    const userId = user?.id;
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -37,7 +41,10 @@ export default function AddLecture() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/upload?user_id=1`, {
+          
+            
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/upload?user_id=${userId}`, {
                 method: 'POST',
                 body: formData,
             });
