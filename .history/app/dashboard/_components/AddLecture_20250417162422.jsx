@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CloudArrowUpIcon, DocumentTextIcon, VideoCameraIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
@@ -13,27 +13,73 @@ export default function AddLecture() {
   const [videoUrl, setVideoUrl] = useState('');
   const [transcription, setTranscription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [shouldGenerate, setShouldGenerate] = useState(false);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState('');
 
   const [lectureName, setLectureName] = useState('My Lecture');
   const [isPublic, setIsPublic] = useState(true);
-  const [description, setDescription] = useState('');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.size > 100 * 1024 * 1024) {
-      setError('File size exceeds 100MB limit');
-      return;
+  const handleUpload = async (e) => {
+  e.preventDefault();
+  if (!file) {
+    setError('Please select a file first');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileType', fileType);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Upload failed');
     }
-    const type = selectedFile.type.startsWith('video/') ? 'video' : 'document';
-    setFileType(type);
-    setFile(selectedFile);
-    setError('');
-  };
+
+    if (data.type === 'video') {
+      setVideoUrl(data.videoUrl);
+      setTranscription(data.transcription);
+    } else {
+      setParsedText(data.text);
+    }
+
+    // Now start generating summary
+    setShowSettingsModal(true);  // show modal first
+    setIsGenerating(true);       // AI processing starts
+
+    const USER_TRANSCRIPT = data.text || data.transcription;
+
+    const prompt = `Analyze this lecture content and provide a detailed summary:
+
+${USER_TRANSCRIPT.slice(0, 30000)}
+
+Format your response with:
+- Main topics covered
+- Key points
+- Important concepts`;
+
+    const result = await GenerateContent_AI.sendMessage({ text: prompt });
+
+    if (!result) throw new Error('No response from AI');
+    setSummary(result);
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setIsGenerating(false); // stop spinner in modal
+    setLoading(false); // done with everything
+  }
+};
+
 
   const clearFile = () => {
     setFile(null);
@@ -66,7 +112,10 @@ export default function AddLecture() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
       if (data.type === 'video') {
         setVideoUrl(data.videoUrl);
@@ -75,20 +124,11 @@ export default function AddLecture() {
         setParsedText(data.text);
       }
 
-      setShowSettingsModal(true);  // open settings modal
-      setShouldGenerate(true);     // trigger AI summary generation
+      // Show modal immediately
+      setShowSettingsModal(true);
 
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const generateSummary = async () => {
-      setIsGenerating(true);
-
-      const USER_TRANSCRIPT = parsedText || transcription;
+      // Begin summary generation
+      const USER_TRANSCRIPT = data.text || data.transcription;
       const prompt = `Analyze this lecture content and provide a detailed summary:
 
 ${USER_TRANSCRIPT.slice(0, 30000)}
@@ -98,22 +138,16 @@ Format your response with:
 - Key points
 - Important concepts`;
 
-      try {
-        const result = await GenerateContent_AI.sendMessage({ text: prompt });
-        setSummary(result);
-      } catch (err) {
-        setError('Failed to generate summary.');
-      } finally {
-        setIsGenerating(false);
-        setLoading(false);
-        setShouldGenerate(false);
-      }
-    };
+      const result = await GenerateContent_AI.sendMessage({ text: prompt });
 
-    if (shouldGenerate) {
-      generateSummary();
+      if (!result) throw new Error('No response from AI');
+      setSummary(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  }, [shouldGenerate, parsedText, transcription]);
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -198,15 +232,15 @@ Format your response with:
         )}
       </div>
 
-      <LectureSettingsModal
+    <LectureSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onConfirm={({ lectureName, isPublic, description }) => {
-          setLectureName(lectureName);
-          setIsPublic(isPublic);
-          setDescription(description);
+        onConfirm={({ lectureName, isPublic }) => {
+            setLectureName(lectureName);
+            setIsPublic(isPublic);
         }}
-      />
+        loading={loading}
+    />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CloudArrowUpIcon, DocumentTextIcon, VideoCameraIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
@@ -14,13 +14,11 @@ export default function AddLecture() {
   const [transcription, setTranscription] = useState('');
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [shouldGenerate, setShouldGenerate] = useState(false);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState('');
 
   const [lectureName, setLectureName] = useState('My Lecture');
   const [isPublic, setIsPublic] = useState(true);
-  const [description, setDescription] = useState('');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleFileChange = (e) => {
@@ -66,7 +64,10 @@ export default function AddLecture() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
       if (data.type === 'video') {
         setVideoUrl(data.videoUrl);
@@ -75,20 +76,12 @@ export default function AddLecture() {
         setParsedText(data.text);
       }
 
-      setShowSettingsModal(true);  // open settings modal
-      setShouldGenerate(true);     // trigger AI summary generation
+      // Start summary generation
+      const USER_TRANSCRIPT = data.text || data.transcription;
 
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
+      setShowSettingsModal(true);   // open modal immediately
+      setIsGenerating(true);        // activate loading state in modal
 
-  useEffect(() => {
-    const generateSummary = async () => {
-      setIsGenerating(true);
-
-      const USER_TRANSCRIPT = parsedText || transcription;
       const prompt = `Analyze this lecture content and provide a detailed summary:
 
 ${USER_TRANSCRIPT.slice(0, 30000)}
@@ -98,22 +91,17 @@ Format your response with:
 - Key points
 - Important concepts`;
 
-      try {
-        const result = await GenerateContent_AI.sendMessage({ text: prompt });
-        setSummary(result);
-      } catch (err) {
-        setError('Failed to generate summary.');
-      } finally {
-        setIsGenerating(false);
-        setLoading(false);
-        setShouldGenerate(false);
-      }
-    };
+      const result = await GenerateContent_AI.sendMessage({ text: prompt });
 
-    if (shouldGenerate) {
-      generateSummary();
+      if (!result) throw new Error('No response from AI');
+      setSummary(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsGenerating(false); // done generating summary
+      setLoading(false);      // done overall
     }
-  }, [shouldGenerate, parsedText, transcription]);
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -201,11 +189,11 @@ Format your response with:
       <LectureSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onConfirm={({ lectureName, isPublic, description }) => {
+        onConfirm={({ lectureName, isPublic }) => {
           setLectureName(lectureName);
           setIsPublic(isPublic);
-          setDescription(description);
         }}
+        loading={isGenerating}
       />
     </div>
   );

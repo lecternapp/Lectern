@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CloudArrowUpIcon, DocumentTextIcon, VideoCameraIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
@@ -13,14 +13,11 @@ export default function AddLecture() {
   const [videoUrl, setVideoUrl] = useState('');
   const [transcription, setTranscription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [shouldGenerate, setShouldGenerate] = useState(false);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState('');
 
   const [lectureName, setLectureName] = useState('My Lecture');
   const [isPublic, setIsPublic] = useState(true);
-  const [description, setDescription] = useState('');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleFileChange = (e) => {
@@ -33,16 +30,6 @@ export default function AddLecture() {
     setFileType(type);
     setFile(selectedFile);
     setError('');
-  };
-
-  const clearFile = () => {
-    setFile(null);
-    setFileType(null);
-    setParsedText('');
-    setVideoUrl('');
-    setTranscription('');
-    setError('');
-    setSummary('');
   };
 
   const handleUpload = async (e) => {
@@ -66,7 +53,10 @@ export default function AddLecture() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
       if (data.type === 'video') {
         setVideoUrl(data.videoUrl);
@@ -74,46 +64,63 @@ export default function AddLecture() {
       } else {
         setParsedText(data.text);
       }
-
-      setShowSettingsModal(true);  // open settings modal
-      setShouldGenerate(true);     // trigger AI summary generation
-
     } catch (err) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const generateSummary = async () => {
-      setIsGenerating(true);
+  const clearFile = () => {
+    setFile(null);
+    setFileType(null);
+    setParsedText('');
+    setVideoUrl('');
+    setTranscription('');
+    setError('');
+    setSummary('');
+  };
 
+  const GenerateContent = async () => {
+    try {
+      setLoading(true);
       const USER_TRANSCRIPT = parsedText || transcription;
-      const prompt = `Analyze this lecture content and provide a detailed summary:
 
-${USER_TRANSCRIPT.slice(0, 30000)}
-
-Format your response with:
-- Main topics covered
-- Key points
-- Important concepts`;
-
-      try {
-        const result = await GenerateContent_AI.sendMessage({ text: prompt });
-        setSummary(result);
-      } catch (err) {
-        setError('Failed to generate summary.');
-      } finally {
-        setIsGenerating(false);
-        setLoading(false);
-        setShouldGenerate(false);
+      if (!USER_TRANSCRIPT) {
+        setError('No content available to generate summary');
+        return;
       }
-    };
 
-    if (shouldGenerate) {
-      generateSummary();
+      const prompt = `Create a summary for the lecture titled "${lectureName}".
+      Public: ${isPublic ? 'Yes' : 'No'}
+
+      Analyze this lecture content and provide a detailed summary:
+
+      ${USER_TRANSCRIPT.slice(0, 30000)}
+
+      Format your response with:
+      - Main topics covered
+      - Key points
+      - Important concepts`;
+
+      const result = await GenerateContent_AI.sendMessage({ text: prompt });
+
+      if (!result) throw new Error('No response received from AI');
+      setSummary(result);
+    } catch (err) {
+      console.error('Generation error:', err);
+      setError('Failed to generate content. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }, [shouldGenerate, parsedText, transcription]);
+  };
+
+  const handleSettingsConfirm = ({ lectureName, isPublic }) => {
+    setLectureName(lectureName);
+    setIsPublic(isPublic);
+    setShowSettingsModal(false);
+    GenerateContent();
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -182,30 +189,48 @@ Format your response with:
               ${!file || loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 transition-colors'}
             `}
           >
-            {loading ? 'Processing & Generating...' : `Process ${fileType === 'video' ? 'Video' : 'Document'}`}
+            {loading ? (
+              <span className="flex items-center justify-center space-x-2">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Processing...</span>
+              </span>
+            ) : (
+              `Process ${fileType === 'video' ? 'Video' : 'Document'}`
+            )}
           </button>
-        </form>
 
-        {summary && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Summary</h3>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="prose max-w-none">
-                <ReactMarkdown>{summary}</ReactMarkdown>
-              </div>
+          {(parsedText || transcription) && (
+            <div className="mt-6">
+              <Button
+                onClick={() => setShowSettingsModal(true)}
+                disabled={loading}
+                className="w-full mb-4"
+              >
+                {loading ? 'Generating Content...' : 'Generate Summary'}
+              </Button>
+
+              {summary && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Summary</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="prose max-w-none">
+                      <ReactMarkdown>{summary}</ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </form>
       </div>
 
       <LectureSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onConfirm={({ lectureName, isPublic, description }) => {
-          setLectureName(lectureName);
-          setIsPublic(isPublic);
-          setDescription(description);
-        }}
+        onConfirm={handleSettingsConfirm}
       />
     </div>
   );

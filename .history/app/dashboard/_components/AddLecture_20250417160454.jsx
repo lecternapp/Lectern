@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CloudArrowUpIcon, DocumentTextIcon, VideoCameraIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
@@ -13,14 +13,11 @@ export default function AddLecture() {
   const [videoUrl, setVideoUrl] = useState('');
   const [transcription, setTranscription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [shouldGenerate, setShouldGenerate] = useState(false);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState('');
 
   const [lectureName, setLectureName] = useState('My Lecture');
   const [isPublic, setIsPublic] = useState(true);
-  const [description, setDescription] = useState('');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleFileChange = (e) => {
@@ -33,16 +30,6 @@ export default function AddLecture() {
     setFileType(type);
     setFile(selectedFile);
     setError('');
-  };
-
-  const clearFile = () => {
-    setFile(null);
-    setFileType(null);
-    setParsedText('');
-    setVideoUrl('');
-    setTranscription('');
-    setError('');
-    setSummary('');
   };
 
   const handleUpload = async (e) => {
@@ -66,7 +53,10 @@ export default function AddLecture() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
       if (data.type === 'video') {
         setVideoUrl(data.videoUrl);
@@ -74,21 +64,34 @@ export default function AddLecture() {
       } else {
         setParsedText(data.text);
       }
-
-      setShowSettingsModal(true);  // open settings modal
-      setShouldGenerate(true);     // trigger AI summary generation
-
     } catch (err) {
       setError(err.message);
+    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const generateSummary = async () => {
-      setIsGenerating(true);
+  const clearFile = () => {
+    setFile(null);
+    setFileType(null);
+    setParsedText('');
+    setVideoUrl('');
+    setTranscription('');
+    setError('');
+    setSummary('');
+  };
 
-      const USER_TRANSCRIPT = parsedText || transcription;
+  const handleGenerate = async () => {
+    const USER_TRANSCRIPT = parsedText || transcription;
+    if (!USER_TRANSCRIPT) {
+      setError('No content available to generate summary');
+      return;
+    }
+
+    setLoading(true);
+    setShowSettingsModal(true); // Open modal while it's generating
+
+    try {
       const prompt = `Analyze this lecture content and provide a detailed summary:
 
 ${USER_TRANSCRIPT.slice(0, 30000)}
@@ -98,22 +101,16 @@ Format your response with:
 - Key points
 - Important concepts`;
 
-      try {
-        const result = await GenerateContent_AI.sendMessage({ text: prompt });
-        setSummary(result);
-      } catch (err) {
-        setError('Failed to generate summary.');
-      } finally {
-        setIsGenerating(false);
-        setLoading(false);
-        setShouldGenerate(false);
-      }
-    };
-
-    if (shouldGenerate) {
-      generateSummary();
+      const result = await GenerateContent_AI.sendMessage({ text: prompt });
+      if (!result) throw new Error('No response received from AI');
+      setSummary(result);
+    } catch (err) {
+      console.error('Generation error:', err);
+      setError('Failed to generate content. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }, [shouldGenerate, parsedText, transcription]);
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -182,29 +179,40 @@ Format your response with:
               ${!file || loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 transition-colors'}
             `}
           >
-            {loading ? 'Processing & Generating...' : `Process ${fileType === 'video' ? 'Video' : 'Document'}`}
+            {loading ? 'Processing...' : `Process ${fileType === 'video' ? 'Video' : 'Document'}`}
           </button>
-        </form>
 
-        {summary && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Summary</h3>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="prose max-w-none">
-                <ReactMarkdown>{summary}</ReactMarkdown>
-              </div>
+          {(parsedText || transcription) && (
+            <div className="mt-6">
+              <Button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full mb-4"
+              >
+                {loading ? 'Generating Summary...' : 'Generate Summary'}
+              </Button>
+
+              {summary && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Summary</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="prose max-w-none">
+                      <ReactMarkdown>{summary}</ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </form>
       </div>
 
       <LectureSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        onConfirm={({ lectureName, isPublic, description }) => {
+        onConfirm={({ lectureName, isPublic }) => {
           setLectureName(lectureName);
           setIsPublic(isPublic);
-          setDescription(description);
         }}
       />
     </div>
