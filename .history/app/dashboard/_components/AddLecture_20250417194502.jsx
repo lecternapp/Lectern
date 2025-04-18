@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import { GenerateContent_AI } from '@/configs/AiModel';
 import LectureSettingsModal from './LectureSettingsModal';
-import { toast } from 'sonner';
+import { toast } from 'sonner'; // ✅ Import toast
 
 export default function AddLecture() {
   const [file, setFile] = useState(null);

@@ -7,6 +7,7 @@ import { GenerateContent_AI } from '@/configs/AiModel';
 import LectureSettingsModal from './LectureSettingsModal';
 import { toast } from 'sonner';
 
+
 export default function AddLecture() {
   const [file, setFile] = useState(null);
   const [fileType, setFileType] = useState(null);
@@ -76,11 +77,11 @@ export default function AddLecture() {
         setParsedText(data.text);
       }
 
-      setShowSettingsModal(true);
-      setShouldGenerate(true);
+      setShowSettingsModal(true);  // open settings modal
+      setShouldGenerate(true);     // trigger AI summary generation
+
     } catch (err) {
       setError(err.message);
-      toast.error('Failed to upload file.');
       setLoading(false);
     }
   };
@@ -102,10 +103,8 @@ Format your response with:
       try {
         const result = await GenerateContent_AI.sendMessage({ text: prompt });
         setSummary(result);
-        toast.success('Lecture summary generated!');
       } catch (err) {
         setError('Failed to generate summary.');
-        toast.error('Failed to generate summary.');
       } finally {
         setIsGenerating(false);
         setLoading(false);
@@ -208,7 +207,6 @@ Format your response with:
           setLectureName(lectureName);
           setIsPublic(isPublic);
           setDescription(description);
-          toast.success('Lecture settings saved!');
         }}
       />
     </div>
