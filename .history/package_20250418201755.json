@@ -8,10 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "engines": {
-  "node": ">=18.17.0"
-  },
+  
 
+  
   "dependencies": {
     "@clerk/nextjs": "^6.9.12",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
