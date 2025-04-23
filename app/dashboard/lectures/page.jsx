@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -6,7 +6,6 @@ import { useUser } from "@clerk/nextjs";
 import { useSummary } from "@/app/context/SummaryContext";
 import LectureUpdateModal from "@/app/dashboard/_components/LectureUpdateModal";
 import { MoreHorizontal } from "lucide-react";
-
 
 const fallbackColors = [
   "bg-indigo-500",
@@ -68,26 +67,37 @@ export default function LecturesPage() {
 
   const handleUpdateLecture = async (updatedLecture) => {
     try {
-      const res = await fetch(`/api/lectures/${updatedLecture.id}`, {
+      const res = await fetch(`/api/updatelecture`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLecture),
       });
-
-      if (!res.ok) throw new Error("Failed to update lecture");
-
+  
+      const responseBody = await res.json();
+  
+      if (!res.ok) {
+        console.error("Server error:", responseBody); // 👈 log error details
+        throw new Error("Failed to update lecture");
+      }
+  
+      const updatedFromServer = responseBody;
+  
       const updatedLectures = lectures.map((lec) =>
-        lec.id === updatedLecture.id ? updatedLecture : lec
+        lec.id === updatedFromServer.id ? updatedFromServer : lec
       );
-
-      setLectures(updatedLectures);
-      setSummaries(updatedLectures);
+  
+      setLectures([...updatedLectures]);
+      setSummaries([...updatedLectures]);
+      setModalOpen(false);
     } catch (err) {
       console.error("Error updating lecture:", err);
     }
   };
+  
+  
 
-  if (loading) return <div className="p-6 text-gray-600">Loading lectures...</div>;
+  if (loading)
+    return <div className="p-6 text-gray-600">Loading lectures...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
 
   return (
@@ -97,40 +107,39 @@ export default function LecturesPage() {
         {lectures.map((lecture, index) => (
           <div key={lecture.id} className="relative">
             <Link href={`/${lecture.id}/summary`}>
-  <div className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer">
-    <div
-      className={`h-32 w-full rounded-t-xl ${
-        fallbackColors[index % fallbackColors.length]
-      } relative`}
-    >
-      {/* Triple Dot Button */}
-      <button
-        onClick={(e) => handleEditClick(lecture, e)}
-        className="absolute top-2 right-2 p-1 rounded-full bg-white/70 hover:bg-white shadow"
-      >
-        <MoreHorizontal className="w-5 h-5 text-gray-800" />
-      </button>
-    </div>
-    <div className="p-4">
-      <h2 className="text-xl font-semibold">
-        {lecture.summaryTitle || "Untitled Lecture"}
-      </h2>
-      <p className="text-sm text-gray-500">
-        {lecture.summaryDescription || "No description available."}
-      </p>
-      <div
-        className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full ${
-          lecture.isPublic
-            ? "bg-green-100 text-green-800"
-            : "bg-gray-200 text-gray-500"
-        }`}
-      >
-        {lecture.isPublic ? "Public Page" : "Private Page"}
-      </div>
-    </div>
-  </div>
-</Link>
-
+              <div className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer">
+                <div
+                  className={`h-32 w-full rounded-t-xl ${
+                    fallbackColors[index % fallbackColors.length]
+                  } relative`}
+                >
+                  {/* Triple Dot Button */}
+                  <button
+                    onClick={(e) => handleEditClick(lecture, e)}
+                    className="absolute top-2 right-2 p-1 rounded-full bg-white/70 hover:bg-white shadow"
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-gray-800" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold">
+                    {lecture.summaryTitle || "Untitled Lecture"}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {lecture.summaryDescription || "No description available."}
+                  </p>
+                  <div
+                    className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full ${
+                      lecture.isPublic
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {lecture.isPublic ? "Public Page" : "Private Page"}
+                  </div>
+                </div>
+              </div>
+            </Link>
 
             <button
               onClick={(e) => handleEditClick(lecture, e)}

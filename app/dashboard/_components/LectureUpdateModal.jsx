@@ -14,46 +14,43 @@ export default function LectureUpdateModal({
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
-  // Prefill modal when lecture changes
   useEffect(() => {
     if (initialLecture) {
       setLectureName(initialLecture.summaryTitle || '');
       setDescription(initialLecture.summaryDescription || '');
-      setIsPublic(initialLecture.isPublic || false);
+      setIsPublic(Boolean(initialLecture.isPublic));
     }
   }, [initialLecture]);
 
   const handleConfirm = async () => {
     const updatedLecture = {
-      summaryId: initialLecture.id, // Send the summary ID
+      summaryId: initialLecture.id,
       summaryTitle: lectureName,
       summaryDescription: description,
       isPublic,
     };
-
+  
     try {
       const response = await fetch('/api/updatelecture', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedLecture),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         alert(errorData.error || 'Failed to update the lecture');
         return;
       }
-
-      const updatedData = await response.json();
-      onConfirm(updatedData); // Pass the updated data back to the parent component
-      onClose(); // Close the modal after successful update
+  
+      // 🚀 Force a page reload to get the latest data
+      window.location.reload();
     } catch (error) {
       console.error('Error updating lecture:', error);
       alert('An error occurred while updating the lecture.');
     }
   };
+  
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -64,7 +61,6 @@ export default function LectureUpdateModal({
             Edit Lecture Settings
           </Dialog.Title>
 
-          {/* Lecture Name */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Lecture Name
@@ -77,7 +73,6 @@ export default function LectureUpdateModal({
             />
           </div>
 
-          {/* Lecture Description */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Lecture Description
@@ -91,41 +86,37 @@ export default function LectureUpdateModal({
             />
           </div>
 
-          {/* Public/Private Toggle */}
           <div className="space-y-2">
             <label className="block text-sm font-medium">Visibility</label>
             <div className="flex gap-2">
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-lg border text-sm font-medium ${
-                  isPublic
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-                onClick={() => setIsPublic(true)}
-              >
-                Public
-              </button>
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-lg border text-sm font-medium ${
-                  !isPublic
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-                onClick={() => setIsPublic(false)}
-              >
-                Private
-              </button>
+              {['Public', 'Private'].map((label) => {
+                const value = label === 'Public';
+                const active = isPublic === value;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium ${
+                      active
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                    onClick={() => setIsPublic(value)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Footer Buttons */}
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleConfirm}>Confirm</Button>
+            <Button type="button" onClick={handleConfirm}>
+              Confirm
+            </Button>
           </div>
         </Dialog.Panel>
       </div>
