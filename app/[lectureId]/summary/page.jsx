@@ -37,7 +37,75 @@
 //   );
 // }
 
-// Jahn: I remmoved the regenerate button function cuz i feel like its not necessary.
+// // Jahn: I remmoved the regenerate button function cuz i feel like its not necessary.
+// 'use client';
+// import { useParams } from 'next/navigation';
+// import ReactMarkdown from 'react-markdown';
+// import { useSummary } from '@/app/context/SummaryContext';
+// import { useEffect, useState } from 'react';
+
+// export default function SummaryPage() {
+//   const { lectureId } = useParams();
+//   const { summary: contextSummary, setSummary } = useSummary();
+
+//   const [summary, setSummaryState] = useState('');
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState('');
+
+//   const isFromContext = !!contextSummary;
+
+//   // Fetch summary directly in useEffect if it's not in context
+//   useEffect(() => {
+//     if (isFromContext) {
+//       setSummaryState(contextSummary);
+//       console.log('🧠 Summary pulled from context');
+//     } else if (lectureId) {
+//       async function fetchSummary() {
+//         setLoading(true);
+//         setError('');
+
+//         try {
+//           const res = await fetch(`/api/summaries/${lectureId}`);
+//           if (!res.ok) throw new Error('Failed to load summary');
+
+//           const data = await res.json();
+//           setSummaryState(data.summary || '');
+//           if (data.summary) {
+//             setSummary(data.summary); // Update context with fetched summary
+//             console.log('🧠 Summary fetched and stored in context');
+//           }
+//         } catch (err) {
+//           setError(err.message || 'Something went wrong');
+//         } finally {
+//           setLoading(false);
+//         }
+//       }
+
+//       fetchSummary();
+//     }
+//   }, [lectureId, isFromContext, contextSummary, setSummary]);
+
+//   return (
+//     <div className="p-6 max-w-4xl mx-auto space-y-6 text-center">
+//       <h2 className="text-2xl font-bold">Summary</h2>
+
+//       {!summary && loading && (
+//         <p className="text-gray-600">Loading summary...</p>
+//       )}
+//       {!summary && error && (
+//         <p className="text-red-500">Error: {error}</p>
+//       )}
+
+//       {summary && (
+//         <div className="bg-white p-6 rounded-lg shadow border text-gray-800 prose max-w-none text-left">
+//           <ReactMarkdown className="prose max-w-none text-gray-800">
+//             {summary}
+//           </ReactMarkdown>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 'use client';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -46,19 +114,26 @@ import { useEffect, useState } from 'react';
 
 export default function SummaryPage() {
   const { lectureId } = useParams();
-  const { summary: contextSummary, setSummary } = useSummary();
+  const {
+    summary: contextSummary,
+    setSummary,
+  } = useSummary();
 
-  const [summary, setSummaryState] = useState('');
+  const [summaryText, setSummaryText] = useState('');
+  const [summaryTitle, setSummaryTitle] = useState('Summary');
+  const [summaryDescription, setSummaryDescription] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const isFromContext = !!contextSummary;
 
-  // Fetch summary directly in useEffect if it's not in context
   useEffect(() => {
     if (isFromContext) {
-      setSummaryState(contextSummary);
+      setSummaryText(contextSummary.summary || '');
+      setSummaryTitle(contextSummary.title || 'Summary');
+      setSummaryDescription(contextSummary.description || '');
       console.log('🧠 Summary pulled from context');
+      setLoading(false);
     } else if (lectureId) {
       async function fetchSummary() {
         setLoading(true);
@@ -69,9 +144,12 @@ export default function SummaryPage() {
           if (!res.ok) throw new Error('Failed to load summary');
 
           const data = await res.json();
-          setSummaryState(data.summary || '');
-          if (data.summary) {
-            setSummary(data.summary); // Update context with fetched summary
+          setSummaryText(data.summary || '');
+          setSummaryTitle(data.title || 'Loading Summary');
+          setSummaryDescription(data.description || '');
+
+          if (data) {
+            setSummary(data); // Save full object in context
             console.log('🧠 Summary fetched and stored in context');
           }
         } catch (err) {
@@ -87,19 +165,19 @@ export default function SummaryPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 text-center">
-      <h2 className="text-2xl font-bold">Summary</h2>
+      <h2 className="text-2xl font-bold">{summaryTitle}</h2>
 
-      {!summary && loading && (
+      {!summaryText && loading && (
         <p className="text-gray-600">Loading summary...</p>
       )}
-      {!summary && error && (
+      {!summaryText && error && (
         <p className="text-red-500">Error: {error}</p>
       )}
 
-      {summary && (
+      {summaryText && (
         <div className="bg-white p-6 rounded-lg shadow border text-gray-800 prose max-w-none text-left">
           <ReactMarkdown className="prose max-w-none text-gray-800">
-            {summary}
+            {summaryText}
           </ReactMarkdown>
         </div>
       )}

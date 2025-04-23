@@ -88,7 +88,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 
 // 'use client';
 // import { useParams } from 'next/navigation';
@@ -159,7 +159,7 @@
 //         try {
 //           // First, parse the outer JSON response
 //           const data = JSON.parse(response);
-          
+
 //           // Now parse the flashcards string into an array of objects
 //           const flashcards = JSON.parse(data.flashcards); // Parse the stringified flashcards array
 //           console.log('Flashcards generated:', flashcards);
@@ -251,21 +251,21 @@
 //   return <div className="p-6 text-center text-gray-600">Loading flashcards...</div>;
 // }
 
-'use client';
-import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { useSummary } from '@/app/context/SummaryContext';
-import { Button } from '@/components/ui/button';
+"use client";
+import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSummary } from "@/app/context/SummaryContext";
+import { Button } from "@/components/ui/button";
 
 export default function FlashcardsPage() {
   const { lectureId } = useParams();
-  const { flashcards, setFlashcards } = useSummary();
+  const { flashcards, setFlashcards, summary, setSummary } = useSummary();
 
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [finished, setFinished] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [rawJson, setRawJson] = useState('');
+  const [rawJson, setRawJson] = useState("");
   const [error, setError] = useState(null);
 
   const current = flashcards ? flashcards[index] : null;
@@ -273,33 +273,34 @@ export default function FlashcardsPage() {
   useEffect(() => {
     const loadFlashcards = async () => {
       if (flashcards) {
-        console.log('✅ Loaded flashcards from context');
+        console.log("✅ Loaded flashcards from context");
         setIndex(0);
         return;
       }
 
-      console.log('📡 No flashcards in context, calling API...');
+      console.log("📡 No flashcards in context, calling API...");
       setGenerating(true);
       setError(null);
 
       try {
         const response = await fetch(`/api/flashcards`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ lectureId }),
         });
 
         const data = await response.json();
 
-        if (!response.ok) throw new Error(data.error || 'Failed to load flashcards');
+        if (!response.ok)
+          throw new Error(data.error || "Failed to load flashcards");
 
         setFlashcards(data.flashcards);
         setRawJson(JSON.stringify(data.flashcards, null, 2));
         setIndex(0);
       } catch (err) {
-        console.error('❌ Error fetching flashcards:', err);
+        console.error("❌ Error fetching flashcards:", err);
         setError(err.message);
       } finally {
         setGenerating(false);
@@ -333,23 +334,24 @@ export default function FlashcardsPage() {
     setGenerating(true);
     try {
       const response = await fetch(`/api/flashcards`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ lectureId }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Failed to generate flashcards');
+      if (!response.ok)
+        throw new Error(data.error || "Failed to generate flashcards");
 
       setFlashcards(data.flashcards);
       setRawJson(JSON.stringify(data.flashcards, null, 2));
       setIndex(0);
       setFinished(false);
     } catch (err) {
-      console.error('❌ Error generating flashcards:', err);
+      console.error("❌ Error generating flashcards:", err);
       setError(err.message);
     } finally {
       setGenerating(false);
@@ -359,11 +361,19 @@ export default function FlashcardsPage() {
   if (!flashcards) {
     return (
       <div className="p-6 max-w-xl mx-auto text-center space-y-6">
-        <h2 className="text-2xl font-bold">Flashcards for Lecture {lectureId}</h2>
-        <p className="text-gray-500">You haven't generated any flashcards yet.</p>
+        <h2 className="text-2xl font-bold">
+          Flashcards: {summary?.title || `Lecture ${lectureId}`}
+        </h2>
+        <p className="text-gray-500">
+          You haven't generated any flashcards yet.
+        </p>
 
-        <Button onClick={handleGenerateFlashcards} variant="default" disabled={generating}>
-          {generating ? 'Generating...' : 'Generate Flashcards'}
+        <Button
+          onClick={handleGenerateFlashcards}
+          variant="default"
+          disabled={generating}
+        >
+          {generating ? "Generating..." : "Generate Flashcards"}
         </Button>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -383,14 +393,16 @@ export default function FlashcardsPage() {
   if (current) {
     return (
       <div className="p-6 max-w-xl mx-auto text-center space-y-6">
-        <h2 className="text-2xl font-bold">Flashcards for Lecture {lectureId}</h2>
+        <h2 className="text-2xl font-bold">
+          Flashcards: {summary?.title || `Lecture ${lectureId}`}
+        </h2>
 
         {!finished ? (
           <>
             <div
               onClick={handleFlip}
               className={`cursor-pointer bg-white p-10 rounded-lg shadow border text-xl font-medium min-h-[150px] flex items-center justify-center transition-transform duration-300 ${
-                flipped ? 'rotate-[2deg] skew-y-1 bg-blue-50' : ''
+                flipped ? "rotate-[2deg] skew-y-1 bg-blue-50" : ""
               }`}
             >
               {flipped ? current.definition : current.term}
@@ -424,5 +436,7 @@ export default function FlashcardsPage() {
     );
   }
 
-  return <div className="p-6 text-center text-gray-600">Loading flashcards...</div>;
+  return (
+    <div className="p-6 text-center text-gray-600">Loading flashcards...</div>
+  );
 }

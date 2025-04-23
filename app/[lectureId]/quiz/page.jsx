@@ -149,13 +149,13 @@
 //   );
 // }'use client';
 
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useSummary } from '@/app/context/SummaryContext';
-import { useQuizContext } from '@/app/context/QuizContext';
-import { Button } from '@/components/ui/button';
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSummary } from "@/app/context/SummaryContext";
+import { useQuizContext } from "@/app/context/QuizContext";
+import { Button } from "@/components/ui/button";
 
 export default function GenerateQuiz() {
   const { lectureId } = useParams();
@@ -176,7 +176,7 @@ export default function GenerateQuiz() {
   useEffect(() => {
     const loadQuiz = async () => {
       if (quiz?.length) {
-        console.log('✅ Quiz loaded from context');
+        console.log("✅ Quiz loaded from context");
         setLoading(false);
         return;
       }
@@ -186,14 +186,14 @@ export default function GenerateQuiz() {
 
       try {
         const response = await fetch(`/api/quizzes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lectureId, summary }), // summary is optional fallback
         });
 
         const data = await response.json();
 
-        if (!response.ok) throw new Error(data.error || 'Failed to load quiz');
+        if (!response.ok) throw new Error(data.error || "Failed to load quiz");
 
         if (data.summary && !summary) {
           setSummary(data.summary);
@@ -202,10 +202,10 @@ export default function GenerateQuiz() {
         if (data.quizQuestions) {
           setQuiz(data.quizQuestions);
         } else {
-          throw new Error('Quiz data missing from response');
+          throw new Error("Quiz data missing from response");
         }
       } catch (err) {
-        console.error('❌ Error fetching quiz:', err);
+        console.error("❌ Error fetching quiz:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -253,7 +253,9 @@ export default function GenerateQuiz() {
   if (error) {
     return (
       <div className="p-6 max-w-xl mx-auto text-center space-y-6">
-        <h2 className="text-2xl font-bold">Quiz for Lecture {lectureId}</h2>
+        <h2 className="text-2xl font-bold">
+          Quiz: {summary?.title || `Lecture ${lectureId}`}
+        </h2>
         <p className="text-red-500 text-sm">{error}</p>
       </div>
     );
@@ -271,7 +273,7 @@ export default function GenerateQuiz() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h1 className="text-xl font-semibold text-gray-800">
-          Quiz on: {lectureId}
+          Quiz on: {summary?.title || `Lecture ${lectureId}`}
         </h1>
       </div>
 
@@ -281,7 +283,9 @@ export default function GenerateQuiz() {
             <h3 className="text-2xl font-semibold text-gray-800 mb-6">
               {question.question}
             </h3>
-            <p className="text-sm font-semibold text-gray-600 mb-4">Choose the correct answer</p>
+            <p className="text-sm font-semibold text-gray-600 mb-4">
+              Choose the correct answer
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {question.options.map((choice) => (
                 <button
@@ -291,9 +295,9 @@ export default function GenerateQuiz() {
                     ${
                       selected === choice
                         ? choice === question.answer
-                          ? 'bg-green-100 border-green-400 text-green-700'
-                          : 'bg-red-100 border-red-400 text-red-700'
-                        : 'hover:bg-gray-100 border-gray-200 text-gray-800'
+                          ? "bg-green-100 border-green-400 text-green-700"
+                          : "bg-red-100 border-red-400 text-red-700"
+                        : "hover:bg-gray-100 border-gray-200 text-gray-800"
                     }`}
                 >
                   {choice}
@@ -304,7 +308,7 @@ export default function GenerateQuiz() {
             {!selected && (
               <div className="text-center mt-4">
                 <button
-                  onClick={() => handleSelect('')}
+                  onClick={() => handleSelect("")}
                   className="text-sm text-gray-500 hover:underline"
                 >
                   Don’t know?
@@ -316,7 +320,9 @@ export default function GenerateQuiz() {
           {showNext && (
             <div className="flex justify-end">
               <Button onClick={handleNext}>
-                {current === quiz.length - 1 ? 'Finish Quiz' : 'Next Question →'}
+                {current === quiz.length - 1
+                  ? "Finish Quiz"
+                  : "Next Question →"}
               </Button>
             </div>
           )}
@@ -325,13 +331,17 @@ export default function GenerateQuiz() {
 
       {finished && (
         <div className="bg-white p-8 rounded-lg shadow text-center space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800">🎉 Quiz Complete!</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            🎉 Quiz Complete!
+          </h2>
           <p className="text-lg text-gray-600">
-            You scored <span className="font-semibold">{score}</span> out of{' '}
+            You scored <span className="font-semibold">{score}</span> out of{" "}
             <span className="font-semibold">{quiz.length}</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" onClick={handleRetake}>Retake Quiz</Button>
+            <Button variant="outline" onClick={handleRetake}>
+              Retake Quiz
+            </Button>
             {/* <Button onClick={handleRegenerate}>Regenerate Questions</Button> */}
           </div>
         </div>
