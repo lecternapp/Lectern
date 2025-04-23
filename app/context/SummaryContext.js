@@ -1,43 +1,47 @@
-// 'use client';
-// import { createContext, useContext, useState } from 'react';
-
-// const SummaryContext = createContext();
-
-// export const useSummary = () => useContext(SummaryContext);
-
-// export const SummaryProvider = ({ children }) => {
-//   const [summary, setSummary] = useState(null);
-
-//   return (
-//     <SummaryContext.Provider value={{ summary, setSummary }}>
-//       {children}
-//     </SummaryContext.Provider>
-//   );
-// };
-
-// iteration with flashcards:
 'use client';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const SummaryContext = createContext();
 
 export const useSummary = () => useContext(SummaryContext);
 
 export const SummaryProvider = ({ children }) => {
-  const [summary, setSummary] = useState(null); // current/active summary
-  const [summaries, setSummaries] = useState([]); // all summaries
-  const [flashcards, setFlashcards] = useState(null);
+  // Initialize state from sessionStorage if available
+  const [summary, setSummary] = useState(() => {
+    const storedSummary = sessionStorage.getItem('summary');
+    return storedSummary ? JSON.parse(storedSummary) : null;
+  });
+  
+  const [summaries, setSummaries] = useState(() => {
+    const storedSummaries = sessionStorage.getItem('summaries');
+    return storedSummaries ? JSON.parse(storedSummaries) : [];
+  });
+  
+  const [flashcards, setFlashcards] = useState(() => {
+    const storedFlashcards = sessionStorage.getItem('flashcards');
+    return storedFlashcards ? JSON.parse(storedFlashcards) : null;
+  });
 
-  // Optionally add to summaries when setting the active summary
+  // Handle setting summary and updating sessionStorage
   const handleSetSummary = (newSummary) => {
     setSummary(newSummary);
-
-    // Avoid duplicates
+    // Update summaries array if necessary
     setSummaries((prev) => {
       if (!newSummary?.id || prev.some((s) => s.id === newSummary.id)) return prev;
-      return [...prev, newSummary];
+      const updatedSummaries = [...prev, newSummary];
+      sessionStorage.setItem('summaries', JSON.stringify(updatedSummaries)); // Save to sessionStorage
+      return updatedSummaries;
     });
+    // Save to sessionStorage
+    sessionStorage.setItem('summary', JSON.stringify(newSummary));
   };
+
+  // Save flashcards to sessionStorage whenever it changes
+  useEffect(() => {
+    if (flashcards !== null) {
+      sessionStorage.setItem('flashcards', JSON.stringify(flashcards));
+    }
+  }, [flashcards]);
 
   return (
     <SummaryContext.Provider

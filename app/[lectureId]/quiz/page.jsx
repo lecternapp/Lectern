@@ -270,11 +270,8 @@ export default function GenerateQuiz() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-sm text-gray-500 font-medium">
-          {score} / {quiz.length}
-        </h2>
         <h1 className="text-xl font-semibold text-gray-800">
-          CPSC 366 Midterm — Lecture {lectureId}
+          Quiz on: {lectureId}
         </h1>
       </div>
 
