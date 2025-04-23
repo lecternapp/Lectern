@@ -1,6 +1,8 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { SummaryProvider } from './context/SummaryContext';
+import { QuizProvider } from "./context/QuizContext";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -9,7 +11,7 @@ const outfit = Outfit({
 
 export const metadata = {
   title: "Lectern - AI Learning Assistant",
-  description: " you into clear knowledge with AI",
+  description: "Turning your lectures into clear knowledge with AI",
 };
 
 export default function RootLayout({ children }) {
@@ -17,7 +19,11 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body className={`${outfit.className} antialiased`}>
-          {children}
+          <SummaryProvider>
+            <QuizProvider>
+              {children}
+            </QuizProvider>
+          </SummaryProvider>
         </body>
       </html>
     </ClerkProvider>
