@@ -1,4 +1,3 @@
-'use client';
 import { Dialog } from '@headlessui/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

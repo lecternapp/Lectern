@@ -7,11 +7,17 @@ const QuizContext = createContext();
 
 // Provider component
 export const QuizProvider = ({ children }) => {
-  // Initialize quiz state from sessionStorage if available
-  const [quiz, setQuiz] = useState(() => {
-    const storedQuiz = sessionStorage.getItem('quiz');
-    return storedQuiz ? JSON.parse(storedQuiz) : null;
-  });
+  const [quiz, setQuiz] = useState(null);
+
+  // Initialize quiz state from sessionStorage if available (on client side only)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedQuiz = sessionStorage.getItem('quiz');
+      if (storedQuiz) {
+        setQuiz(JSON.parse(storedQuiz));
+      }
+    }
+  }, []); // This effect runs once, after the component mounts (client-side only)
 
   // Log function to set the quiz
   const logSetQuiz = (data, source = 'unknown') => {
@@ -25,12 +31,12 @@ export const QuizProvider = ({ children }) => {
     return quiz;
   };
 
-  // Save quiz to sessionStorage whenever it changes
+  // Save quiz to sessionStorage whenever it changes (on client side only)
   useEffect(() => {
-    if (quiz !== null) {
+    if (quiz !== null && typeof window !== 'undefined') {
       sessionStorage.setItem('quiz', JSON.stringify(quiz));
     }
-  }, [quiz]);
+  }, [quiz]); // This effect runs when quiz state changes
 
   return (
     <QuizContext.Provider value={{ quiz, setQuiz: logSetQuiz, getQuiz: logGetQuiz }}>
