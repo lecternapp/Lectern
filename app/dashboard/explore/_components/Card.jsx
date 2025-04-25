@@ -1,38 +1,108 @@
-import React from 'react';
+'use client';
 
-const colors = [
-  'bg-red-500', 'bg-blue-500', 'bg-green-500',
-  'bg-yellow-500', 'bg-purple-500', 'bg-pink-500',
-  'bg-indigo-500', 'bg-teal-500', 'bg-orange-500'
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { useSummary } from '@/app/context/SummaryContext';
+
+const fallbackColors = [
+  "bg-indigo-500",
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-pink-500",
 ];
 
-const getRandomColor = () => colors[Math.floor(Math.random() * colors.length)];
+// Simple function to format date
+const formatDate = (dateString) => {
+  if (!dateString) return 'Recently';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Recently';
+  }
+};
 
-const Card = ({ number, index }) => {
-  const randomColor = getRandomColor();
+const Card = ({ lecture = {}, index, isRecommended = false }) => {
+  const router = useRouter();
+  const { setSummary } = useSummary();
+  
+  if (!lecture) {
+    console.error('Lecture object is undefined at index', index);
+    return null;
+  }
+  
+  // Get the correct property names that exist in the lecture object
+  const lectureId = lecture.id || lecture.summaryId || '';
+  const title = lecture.summary_title || lecture.summaryTitle || 'Untitled Lecture';
+  const description = lecture.summary_description || lecture.summaryDescription || 'No description available';
+  const isPublic = lecture.is_public !== undefined ? lecture.is_public : (lecture.isPublic !== undefined ? lecture.isPublic : true);
+  const slug = lecture.public_slug || lecture.publicSlug || null;
+  
+  // Use public_slug if available, otherwise use the lecture ID directly
+  const lectureLink = slug 
+    ? `/lecture/${slug}` 
+    : `/${lectureId}/summary`;
+    
+  // Handle click to clear context and navigate
+  const handleCardClick = (e) => {
+    e.preventDefault();
+    
+    // Clear the context by setting summary to null
+    // This forces the summary page to fetch fresh data from the API
+    setSummary(null);
+    
+    // Remove stored summary from session storage
+    sessionStorage.removeItem('summary');
+    
+    // Navigate to the lecture page
+    router.push(lectureLink);
+  };
 
   return (
-    <div className="relative bg-white border rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700 transform transition duration-500 hover:scale-105">
-      <div className="absolute top-3 right-3 rounded-full bg-blue-600 text-gray-200 w-6 h-6 text-center">
-        {number}
-      </div>
-      <div className="p-2 flex justify-center">
-        <div className={`rounded-md w-full ${randomColor}`} style={{ aspectRatio: '16 / 9' }}></div>
-        {/* Placeholder for image - Uncomment this when needed */}
-        {/* <a href="#"> */}
-        {/*   <img className="rounded-md" src="your-image-url.jpg" loading="lazy" alt="thumbnail" /> */}
-        {/* </a> */}
-      </div>
-      <div className="px-4 pb-3">
-        <a href="#">
-          <h5 className="text-xl font-semibold tracking-tight hover:text-blue-800 dark:hover:text-blue-300 text-gray-900 dark:text-white">
-            Topic {index + 1}
-          </h5>
-        </a>
-        <p className="antialiased text-gray-600 dark:text-gray-400 text-sm break-all">
-          Describe this topic
-        </p>
-      </div>
+    <div className="relative">
+      <a href={lectureLink} onClick={handleCardClick} className="block">
+        <div className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer">
+          <div
+            className={`h-32 w-full rounded-t-xl ${
+              fallbackColors[index % fallbackColors.length]
+            } relative`}
+          >
+            {isRecommended && (
+              <div className="absolute top-2 right-2 bg-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                Recommended
+              </div>
+            )}
+          </div>
+          <div className="p-4">
+            <h2 className="text-xl font-semibold">
+              {title}
+            </h2>
+            <p className="text-sm text-gray-500 line-clamp-2 mb-2">
+              {description}
+            </p>
+            <div className="flex justify-between items-center">
+              <div
+                className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
+                  isPublic
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                {isPublic ? "Public" : "Private"}
+              </div>
+              <div className="text-xs text-gray-400">
+                {formatDate(lecture.created_at)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
     </div>
   );
 };
