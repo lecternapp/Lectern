@@ -1,95 +1,241 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardFooter } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import ReactMarkdown from 'react-markdown'
+import { Send, Square } from 'lucide-react'
+
+// Custom styles for markdown content
+const markdownStyles = {
+  p: 'mb-4 last:mb-0 leading-7',
+  h1: 'text-2xl font-bold mb-4 mt-6',
+  h2: 'text-xl font-bold mb-3 mt-5',
+  h3: 'text-lg font-bold mb-3 mt-4',
+  ul: 'list-disc pl-6 mb-4 space-y-2 marker:text-gray-400',
+  ol: 'list-decimal pl-6 mb-4 space-y-2',
+  li: 'leading-7 pl-2',
+  'li > p': 'mb-0',
+  'li > ul': 'mt-2 mb-0',
+  'li > ol': 'mt-2 mb-0',
+  blockquote: 'border-l-4 border-gray-200 pl-4 mb-4 italic',
+  code: 'bg-gray-100 rounded px-1.5 py-0.5 font-mono text-sm',
+  pre: 'bg-gray-100 rounded-lg p-4 mb-4 overflow-x-auto',
+  em: 'italic',
+  strong: 'font-bold text-gray-800',
+  a: 'text-blue-500 hover:underline',
+  table: 'min-w-full border-collapse mb-4',
+  th: 'border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left',
+  td: 'border border-gray-300 px-4 py-2',
+  hr: 'my-8 border-t border-gray-200',
+  wrapper: 'space-y-4 [&>h2]:mt-8 [&>h3]:mt-6'
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [lectureId, setLectureId] = useState('23c097df-65f1-4aa7-b013-dc23afedeb7a')
+  const [lectureId, setLectureId] = useState('')
+  const [currentStreamingMessage, setCurrentStreamingMessage] = useState('')
+  const [abortController, setAbortController] = useState(null)
   const messagesEndRef = useRef(null)
   
+  useEffect(() => {
+    // Get lecture ID from URL
+    const pathParts = window.location.pathname.split('/')
+    if (pathParts.length > 1) {
+      setLectureId(pathParts[1])
+    }
+  }, [])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  useEffect(scrollToBottom, [messages])
+  useEffect(scrollToBottom, [messages, currentStreamingMessage])
+
+  // Custom components for ReactMarkdown
+  const MarkdownComponents = {
+    p: ({node, ...props}) => <p className={markdownStyles.p} {...props} />,
+    h1: ({node, ...props}) => <h1 className={markdownStyles.h1} {...props} />,
+    h2: ({node, ...props}) => <h2 className={markdownStyles.h2} {...props} />,
+    h3: ({node, ...props}) => <h3 className={markdownStyles.h3} {...props} />,
+    ul: ({node, ...props}) => <ul className={markdownStyles.ul} {...props} />,
+    ol: ({node, ...props}) => <ol className={markdownStyles.ol} {...props} />,
+    li: ({node, children, ...props}) => {
+      // Check if the list item contains nested lists
+      const hasNestedList = React.Children.toArray(children).some(
+        child => React.isValidElement(child) && (child.type === 'ul' || child.type === 'ol')
+      );
+      return (
+        <li className={`${markdownStyles.li} ${hasNestedList ? 'mb-2' : ''}`} {...props}>
+          {children}
+        </li>
+      );
+    },
+    blockquote: ({node, ...props}) => <blockquote className={markdownStyles.blockquote} {...props} />,
+    code: ({node, inline, ...props}) => 
+      inline ? (
+        <code className={markdownStyles.code} {...props} />
+      ) : (
+        <pre className={markdownStyles.pre}>
+          <code {...props} />
+        </pre>
+      ),
+    em: ({node, ...props}) => <em className={markdownStyles.em} {...props} />,
+    strong: ({node, ...props}) => <strong className={markdownStyles.strong} {...props} />,
+    a: ({node, ...props}) => <a className={markdownStyles.a} target="_blank" rel="noopener noreferrer" {...props} />,
+    table: ({node, ...props}) => <div className="overflow-x-auto"><table className={markdownStyles.table} {...props} /></div>,
+    th: ({node, ...props}) => <th className={markdownStyles.th} {...props} />,
+    td: ({node, ...props}) => <td className={markdownStyles.td} {...props} />,
+    hr: ({node, ...props}) => <hr className={markdownStyles.hr} {...props} />
+  }
+
+  const handleStopGeneration = () => {
+    if (abortController) {
+      abortController.abort()
+      setAbortController(null)
+      setIsTyping(false)
+      // Add the partial message to the messages array
+      if (currentStreamingMessage) {
+        setMessages(prev => [...prev, { role: 'assistant', content: currentStreamingMessage }])
+        setCurrentStreamingMessage('')
+      }
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!input.trim()) return
 
-    setMessages(prev => [...prev, { role: 'user', content: input }])
+    const userMessage = input.trim()
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setInput('')
     setIsTyping(true)
+    setCurrentStreamingMessage('')
 
-//   useEffect(() => {
-//     const getLectureId = () => {
-//         setLectureId("23c097df-65f1-4aa7-b013-dc23afedeb7a")
-//     }
-//     getLectureId()
-//   }, [])
- //UPDATE TO FETCH SUMMARY ID FROM URL
+    // Create new AbortController for this request
+    const controller = new AbortController()
+    setAbortController(controller)
+
     try {
-        // const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/23c097df-65f1-4aa7-b013-dc23afedeb7a`, {
-
-      const response = await fetch('http://127.0.0.1:8000/chat/23c097df-65f1-4aa7-b013-dc23afedeb7a', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/${lectureId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            message: input
-        })
+          message: userMessage
+        }),
+        signal: controller.signal
       })
-      
+
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok: ${response.status}`)
       }
 
-      const data = await response.json()
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let finalMessage = ''
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n').filter(line => line.trim())
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line)
+            if (data.chunk) {
+              finalMessage += data.chunk
+              setCurrentStreamingMessage(finalMessage)
+            } else if (data.done) {
+              setMessages(prev => [...prev, { role: 'assistant', content: finalMessage }])
+              setCurrentStreamingMessage('')
+              setIsTyping(false)
+              setAbortController(null)
+            } else if (data.error) {
+              throw new Error(data.error)
+            }
+          } catch (e) {
+            console.error('Error parsing chunk:', e)
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error fetching data:', error)
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error fetching response. Please try again.' }])
-    } finally {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted')
+        return
+      }
+      console.error('Error:', error)
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }])
       setIsTyping(false)
+      setAbortController(null)
     }
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <Card className="w-full max-w-3xl h-[80vh] flex flex-col bg-white text-black">
+      <Card className="w-full max-w-4xl h-[80vh] flex flex-col bg-white text-black">
         <ScrollArea className="flex-grow p-4">
           {messages.map((message, index) => (
             <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-              <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start`}>
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>{message.role === 'user' ? 'U' : 'AI'}</AvatarFallback>
+              <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start max-w-[90%]`}>
+                <Avatar className={`w-8 h-8 ${message.role === 'user' ? 'ml-2' : 'mr-2'}`}>
+                  <AvatarFallback className={message.role === 'user' ? 'bg-blue-500' : 'bg-gray-500'}>
+                    {message.role === 'user' ? 'U' : 'AI'}
+                  </AvatarFallback>
                 </Avatar>
-                <div className={`mx-2 px-4 py-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>
-                 <ReactMarkdown>{message.content}</ReactMarkdown>
+                <div 
+                  className={`px-4 py-2 rounded-lg ${
+                    message.role === 'user' 
+                      ? 'bg-blue-500 text-white rounded-br-none' 
+                      : 'bg-gray-100 text-black rounded-bl-none'
+                  }`}
+                >
+                  <ReactMarkdown 
+                    components={MarkdownComponents}
+                    className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
+                  >
+                    {message.content}
+                  </ReactMarkdown>
                 </div>
               </div>
             </div>
           ))}
-          {isTyping && (
+          {currentStreamingMessage && (
+            <div className="flex justify-start mb-4">
+              <div className="flex flex-row items-start max-w-[90%]">
+                <Avatar className="w-8 h-8 mr-2">
+                  <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
+                </Avatar>
+                <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
+                  <ReactMarkdown 
+                    components={MarkdownComponents}
+                    className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
+                  >
+                    {currentStreamingMessage}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </div>
+          )}
+          {isTyping && !currentStreamingMessage && (
             <div className="flex justify-start mb-4">
               <div className="flex flex-row items-start">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>AI</AvatarFallback>
+                <Avatar className="w-8 h-8 mr-2">
+                  <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
                 </Avatar>
-                <div className="mx-2 px-4 py-2 rounded-lg bg-gray-200 text-black">
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>
@@ -103,9 +249,23 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-grow bg-gray-200 text-black border-none"
+              className="flex-grow"
+              disabled={isTyping}
             />
-            <Button type="submit" disabled={isTyping} className="bg-blue-500 text-white">Send</Button>
+            {isTyping ? (
+              <Button 
+                type="button" 
+                onClick={handleStopGeneration}
+                variant="destructive"
+                className="bg-red-500 hover:bg-red-600"
+              >
+                <Square className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={!input.trim()}>
+                <Send className="w-4 h-4" />
+              </Button>
+            )}
           </form>
         </CardFooter>
       </Card>
