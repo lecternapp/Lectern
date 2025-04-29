@@ -109,43 +109,25 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
-import { useSummary } from '@/app/context/SummaryContext';
 import { useEffect, useState } from 'react';
 
-export default function SummaryPage() {
+export default function FlashcardsPage() {
   const { lectureId } = useParams();
-  const {
-    summary: contextSummary,
-    setSummary,
-  } = useSummary();
-
-  const [summaryText, setSummaryText] = useState('');
-  const [summaryTitle, setSummaryTitle] = useState('Summary');
-  const [summaryDescription, setSummaryDescription] = useState('');
+  const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const isFromContext = !!contextSummary && !!contextSummary.summary;
-
   useEffect(() => {
-    async function fetchSummary() {
+    async function fetchFlashcards() {
       setLoading(true);
       setError('');
 
       try {
-        const res = await fetch(`/api/summaries/${lectureId}`);
-        if (!res.ok) throw new Error('Failed to load summary');
+        const res = await fetch(`/api/flashcards/${lectureId}`);
+        if (!res.ok) throw new Error('Failed to load flashcards');
 
         const data = await res.json();
-        setSummaryText(data.summary || '');
-        setSummaryTitle(data.title || 'Summary');
-        setSummaryDescription(data.description || '');
-
-        if (data) {
-          setSummary(data); // Save full object in context
-          console.log('🧠 Summary fetched and stored in context');
-        }
+        setFlashcards(data.flashcards || []);
       } catch (err) {
         setError(err.message || 'Something went wrong');
       } finally {
@@ -153,25 +135,14 @@ export default function SummaryPage() {
       }
     }
 
-    if (isFromContext) {
-      console.log('🧠 Summary pulled from context');
-      setSummaryText(contextSummary.summary || '');
-      setSummaryTitle(contextSummary.title || 'Summary');
-      setSummaryDescription(contextSummary.description || '');
-      setLoading(false);
-    } else if (lectureId) {
-      fetchSummary();
+    if (lectureId) {
+      fetchFlashcards();
     }
-  }, [lectureId, isFromContext, contextSummary, setSummary]);
+  }, [lectureId]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-10">
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-gray-800">{summaryTitle}</h2>
-        {summaryDescription && (
-          <p className="text-md text-gray-500 mt-2">{summaryDescription}</p>
-        )}
-      </div>
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
+      <h2 className="text-3xl font-bold text-center">Terms in this set ({flashcards.length})</h2>
 
       {loading && (
         <div className="flex justify-center items-center p-10">
@@ -179,21 +150,29 @@ export default function SummaryPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <p className="ml-4 text-gray-500 font-medium">Loading summary...</p>
+          <p className="ml-4 text-gray-500 font-medium">Loading flashcards...</p>
         </div>
       )}
 
       {!loading && error && (
-        <div className="bg-red-100 text-red-700 p-6 rounded-lg shadow text-center">
-          Error: {error}
-        </div>
+        <p className="text-red-500 text-center">Error: {error}</p>
       )}
 
-      {!loading && summaryText && (
-        <div className="bg-white p-10 rounded-3xl shadow-xl border text-gray-800 prose max-w-none text-left">
-          <ReactMarkdown className="prose max-w-none text-gray-800">
-            {summaryText}
-          </ReactMarkdown>
+      {!loading && flashcards.length > 0 && (
+        <div className="space-y-6">
+          {flashcards.map((card, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-xl shadow-md p-6 flex justify-between items-center min-h-[8rem] border hover:shadow-lg transition-all"
+            >
+              <div className="text-lg font-semibold text-gray-800 w-1/2 pr-4">
+                {card.term}
+              </div>
+              <div className="text-lg text-gray-600 w-1/2 pl-4 border-l">
+                {card.definition}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

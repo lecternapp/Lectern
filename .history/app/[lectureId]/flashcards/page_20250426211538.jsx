@@ -151,7 +151,7 @@ export default function FlashcardsPage() {
           <div
             onClick={handleFlip}
             className={`cursor-pointer bg-white p-14 rounded-3xl shadow-xl border text-4xl font-bold min-h-[350px] flex items-center justify-center w-full max-w-5xl transition-all ${
-              flipped ? "rotate-1 skew-y-.5 bg-blue-50" : ""
+              flipped ? "rotate-1 skew-y- bg-blue-50" : ""
             }`}
           >
             {flipped ? current.definition : current.term}

@@ -8,7 +8,7 @@ import { LuLectern } from "react-icons/lu";
 import { useClerk } from '@clerk/clerk-react';
 function Sidebar() {
 
-  // const { signOut } = useClerk(); // Clerk's signOut method
+  const { signOut } = useClerk(); // Clerk's signOut method
 
   const path = usePathname()
   const Menu =[
