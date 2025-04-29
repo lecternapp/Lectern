@@ -165,14 +165,10 @@ export default function SummaryPage() {
   }, [lectureId, isFromContext, contextSummary, setSummary]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-10">
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-gray-800">{summaryTitle}</h2>
-        {summaryDescription && (
-          <p className="text-md text-gray-500 mt-2">{summaryDescription}</p>
-        )}
-      </div>
+    <div className="p-6 max-w-4xl mx-auto space-y-6 text-center">
+      <h2 className="text-2xl font-bold">{summaryTitle}</h2>
 
+      {/* Proper loading animation */}
       {loading && (
         <div className="flex justify-center items-center p-10">
           <svg className="animate-spin h-10 w-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -183,14 +179,15 @@ export default function SummaryPage() {
         </div>
       )}
 
+
+      {/* Error Message */}
       {!loading && error && (
-        <div className="bg-red-100 text-red-700 p-6 rounded-lg shadow text-center">
-          Error: {error}
-        </div>
+        <p className="text-red-500">Error: {error}</p>
       )}
 
+      {/* Summary Content */}
       {!loading && summaryText && (
-        <div className="bg-white p-10 rounded-3xl shadow-xl border text-gray-800 prose max-w-none text-left">
+        <div className="bg-white p-6 rounded-lg shadow border text-gray-800 prose max-w-none text-left">
           <ReactMarkdown className="prose max-w-none text-gray-800">
             {summaryText}
           </ReactMarkdown>

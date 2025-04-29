@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 
 export default function FlashcardsPage() {
   const { lectureId } = useParams();
-  const { flashcards, setFlashcards, summary } = useSummary();
+  const { flashcards, setFlashcards, summary, setSummary } = useSummary();
 
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [finished, setFinished] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [rawJson, setRawJson] = useState("");
   const [error, setError] = useState(null);
 
   const current = flashcards ? flashcards[index] : null;
@@ -21,12 +22,12 @@ export default function FlashcardsPage() {
     const loadFlashcards = async () => {
       const storedLectureId = sessionStorage.getItem('flashcardsLectureId');
       const shouldReload = !flashcards || lectureId !== storedLectureId;
-
+      
       if (flashcards && lectureId === storedLectureId) {
         setIndex(0);
         return;
       }
-
+      
       if (shouldReload) {
         setFlashcards(null);
       }
@@ -45,6 +46,7 @@ export default function FlashcardsPage() {
         if (!response.ok) throw new Error(data.error || "Failed to load flashcards");
 
         setFlashcards(data.flashcards);
+        setRawJson(JSON.stringify(data.flashcards, null, 2));
         sessionStorage.setItem('flashcardsLectureId', lectureId);
         setIndex(0);
       } catch (err) {
@@ -87,7 +89,6 @@ export default function FlashcardsPage() {
     setIndex(idx);
     setFlipped(false);
     setFinished(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // <<< scroll to top nicely!
   };
 
   const handleGenerateFlashcards = async () => {
@@ -103,6 +104,7 @@ export default function FlashcardsPage() {
       if (!response.ok) throw new Error(data.error || "Failed to generate flashcards");
 
       setFlashcards(data.flashcards);
+      setRawJson(JSON.stringify(data.flashcards, null, 2));
       setIndex(0);
       setFinished(false);
     } catch (err) {
@@ -140,7 +142,7 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-10">
+    <div className="p-6 max-w-5xl mx-auto space-y-10">
       <h2 className="text-4xl font-bold text-center">
         Flashcards: {summary?.title || `Lecture ${lectureId}`}
       </h2>
@@ -151,7 +153,7 @@ export default function FlashcardsPage() {
           <div
             onClick={handleFlip}
             className={`cursor-pointer bg-white p-14 rounded-3xl shadow-xl border text-4xl font-bold min-h-[350px] flex items-center justify-center w-full max-w-5xl transition-all ${
-              flipped ? "rotate-1 skew-y-.5 bg-blue-50" : ""
+              flipped ? "rotate-1 skew-y-1 bg-blue-50" : ""
             }`}
           >
             {flipped ? current.definition : current.term}
@@ -161,17 +163,13 @@ export default function FlashcardsPage() {
             <Button onClick={prevCard} variant="outline" className="px-8 py-4 text-lg">
               ← Back
             </Button>
-
             <Button onClick={handleFlip} variant="outline" className="px-8 py-4 text-lg">
               Flip
             </Button>
-
             <Button
               onClick={nextCard}
-              className={`px-8 py-4 text-lg transition-colors ${
-                flipped
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-white text-gray-500 border hover:bg-white hover:text-gray-700"
+              className={`px-8 py-4 text-lg ${
+                flipped ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-200 text-gray-800"
               }`}
             >
               Next Card →

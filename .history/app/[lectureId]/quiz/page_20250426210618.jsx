@@ -150,16 +150,15 @@ export default function GenerateQuiz() {
       {!finished && question && (
         <div className="space-y-10">
           <div className="bg-white p-12 rounded-3xl shadow-xl border space-y-8">
-          <div className="flex justify-between items-center text-lg text-gray-500">
-            <div>Question {current + 1} of {quiz.length}</div>
-            <Button
-              onClick={handleSubmitQuiz}
-              variant="outline"
-              className="px-6 py-2 text-sm"
-            >
-              Submit
-            </Button>
-          </div>
+            <div className="flex justify-between text-lg text-gray-500">
+              <div>Question {current + 1} of {quiz.length}</div>
+              <button
+                onClick={handleSubmitQuiz}
+                className="text-blue-500 hover:underline text-sm"
+              >
+                Submit Quiz Early
+              </button>
+            </div>
 
             <h3 className="text-2xl font-bold text-gray-800 mb-4">
               {question.question}
@@ -239,7 +238,7 @@ export default function GenerateQuiz() {
               Retake Quiz
             </Button>
           </div>
-        </div>
+        </div>m
       )}
     </div>
   );

@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 
 export default function FlashcardsPage() {
   const { lectureId } = useParams();
-  const { flashcards, setFlashcards, summary } = useSummary();
+  const { flashcards, setFlashcards, summary, setSummary } = useSummary();
 
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [finished, setFinished] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [rawJson, setRawJson] = useState("");
   const [error, setError] = useState(null);
 
   const current = flashcards ? flashcards[index] : null;
@@ -21,13 +22,15 @@ export default function FlashcardsPage() {
     const loadFlashcards = async () => {
       const storedLectureId = sessionStorage.getItem('flashcardsLectureId');
       const shouldReload = !flashcards || lectureId !== storedLectureId;
-
+      
       if (flashcards && lectureId === storedLectureId) {
+        console.log("✅ Loaded flashcards from context for lecture:", lectureId);
         setIndex(0);
         return;
       }
-
+      
       if (shouldReload) {
+        console.log("🔄 Lecture ID changed or no flashcards data, fetching fresh flashcards");
         setFlashcards(null);
       }
 
@@ -45,9 +48,11 @@ export default function FlashcardsPage() {
         if (!response.ok) throw new Error(data.error || "Failed to load flashcards");
 
         setFlashcards(data.flashcards);
+        setRawJson(JSON.stringify(data.flashcards, null, 2));
         sessionStorage.setItem('flashcardsLectureId', lectureId);
         setIndex(0);
       } catch (err) {
+        console.error("❌ Error fetching flashcards:", err);
         setError(err.message);
       } finally {
         setGenerating(false);
@@ -67,14 +72,6 @@ export default function FlashcardsPage() {
     }
   };
 
-  const prevCard = () => {
-    const prev = index - 1;
-    if (prev >= 0) {
-      setIndex(prev);
-      setFlipped(false);
-    }
-  };
-
   const restart = () => {
     setIndex(0);
     setFlipped(false);
@@ -82,13 +79,6 @@ export default function FlashcardsPage() {
   };
 
   const handleFlip = () => setFlipped(prev => !prev);
-
-  const jumpToCard = (idx) => {
-    setIndex(idx);
-    setFlipped(false);
-    setFinished(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // <<< scroll to top nicely!
-  };
 
   const handleGenerateFlashcards = async () => {
     setGenerating(true);
@@ -103,9 +93,11 @@ export default function FlashcardsPage() {
       if (!response.ok) throw new Error(data.error || "Failed to generate flashcards");
 
       setFlashcards(data.flashcards);
+      setRawJson(JSON.stringify(data.flashcards, null, 2));
       setIndex(0);
       setFinished(false);
     } catch (err) {
+      console.error("❌ Error generating flashcards:", err);
       setError(err.message);
     } finally {
       setGenerating(false);
@@ -140,42 +132,28 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-10">
-      <h2 className="text-4xl font-bold text-center">
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
+      <h2 className="text-3xl font-bold text-center">
         Flashcards: {summary?.title || `Lecture ${lectureId}`}
       </h2>
 
       {/* Current Card View */}
       {!finished && current && (
-        <div className="flex flex-col items-center space-y-8">
+        <div className="flex flex-col items-center space-y-6">
           <div
             onClick={handleFlip}
-            className={`cursor-pointer bg-white p-14 rounded-3xl shadow-xl border text-4xl font-bold min-h-[350px] flex items-center justify-center w-full max-w-5xl transition-all ${
-              flipped ? "rotate-1 skew-y-.5 bg-blue-50" : ""
+            className={`cursor-pointer bg-white p-10 rounded-2xl shadow-lg border text-2xl font-semibold min-h-[200px] flex items-center justify-center w-full max-w-2xl transition-all ${
+              flipped ? "rotate-1 skew-y-1 bg-blue-50" : ""
             }`}
           >
             {flipped ? current.definition : current.term}
           </div>
 
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Button onClick={prevCard} variant="outline" className="px-8 py-4 text-lg">
-              ← Back
-            </Button>
-
-            <Button onClick={handleFlip} variant="outline" className="px-8 py-4 text-lg">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={handleFlip} variant="outline">
               Flip
             </Button>
-
-            <Button
-              onClick={nextCard}
-              className={`px-8 py-4 text-lg transition-colors ${
-                flipped
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-white text-gray-500 border hover:bg-white hover:text-gray-700"
-              }`}
-            >
-              Next Card →
-            </Button>
+            <Button onClick={nextCard}>Next Card →</Button>
           </div>
 
           <p className="text-sm text-gray-500">
@@ -187,7 +165,7 @@ export default function FlashcardsPage() {
       {/* Finished Deck */}
       {finished && (
         <div className="flex flex-col items-center space-y-6">
-          <div className="bg-white p-10 rounded-2xl shadow-lg border text-2xl font-semibold text-gray-700 w-full max-w-4xl">
+          <div className="bg-white p-10 rounded-2xl shadow-lg border text-xl font-semibold text-gray-700 w-full max-w-2xl">
             You've reached the end of the flashcards!
           </div>
 
@@ -197,18 +175,14 @@ export default function FlashcardsPage() {
         </div>
       )}
 
-      {/* Terms in This Set */}
-      <div className="mt-16">
-        <h3 className="text-3xl font-bold mb-8 text-center">Generated Terms ({flashcards.length})</h3>
-        <div className="space-y-6">
+      {/* Terms in This Set (Full List) */}
+      <div className="mt-10">
+        <h3 className="text-2xl font-bold mb-6 text-center">Terms in this set ({flashcards.length})</h3>
+        <div className="space-y-4">
           {flashcards.map((card, idx) => (
-            <div
-              key={idx}
-              onClick={() => jumpToCard(idx)}
-              className="flex justify-between items-center bg-white rounded-lg shadow-md border p-8 cursor-pointer hover:bg-blue-50 transition"
-            >
-              <div className="font-bold text-xl text-gray-800 w-1/2">{card.term}</div>
-              <div className="text-gray-600 text-lg w-1/2 pl-6 border-l">{card.definition}</div>
+            <div key={idx} className="flex justify-between items-center bg-white rounded-lg shadow-sm border p-6">
+              <div className="font-semibold text-lg text-gray-800 w-1/2">{card.term}</div>
+              <div className="text-gray-600 text-md w-1/2 pl-6 border-l">{card.definition}</div>
             </div>
           ))}
         </div>

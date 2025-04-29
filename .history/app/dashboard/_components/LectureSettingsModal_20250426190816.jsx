@@ -1,15 +1,11 @@
 import { Dialog } from '@headlessui/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-export default function LectureSettingsModal({ isOpen, onClose, onConfirm, defaultLectureName = "My Lecture" }) {
-  const [lectureName, setLectureName] = useState(defaultLectureName);
+export default function LectureSettingsModal({ isOpen, onClose, onConfirm }) {
+  const [lectureName, setLectureName] = useState('My Lecture');
   const [isPublic, setIsPublic] = useState(true);
   const [description, setDescription] = useState('');
-
-  useEffect(() => {
-    setLectureName(defaultLectureName);
-  }, [defaultLectureName]);
 
   const handleConfirm = () => {
     onConfirm({ lectureName, isPublic, description });

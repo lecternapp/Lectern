@@ -165,32 +165,29 @@ export default function SummaryPage() {
   }, [lectureId, isFromContext, contextSummary, setSummary]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-10">
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-gray-800">{summaryTitle}</h2>
-        {summaryDescription && (
-          <p className="text-md text-gray-500 mt-2">{summaryDescription}</p>
-        )}
-      </div>
+    <div className="p-6 max-w-4xl mx-auto space-y-6 text-center">
+      <h2 className="text-2xl font-bold">{summaryTitle}</h2>
 
+      {/* Proper loading animation */}
       {loading && (
-        <div className="flex justify-center items-center p-10">
-          <svg className="animate-spin h-10 w-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="ml-4 text-gray-500 font-medium">Loading summary...</p>
-        </div>
-      )}
+  <div className="flex justify-center items-center p-10">
+    <svg className="animate-spin h-10 w-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <p className="ml-4 text-gray-500 font-medium">Loading summary...</p>
+  </div>
+)}
 
+
+      {/* Error Message */}
       {!loading && error && (
-        <div className="bg-red-100 text-red-700 p-6 rounded-lg shadow text-center">
-          Error: {error}
-        </div>
+        <p className="text-red-500">Error: {error}</p>
       )}
 
+      {/* Summary Content */}
       {!loading && summaryText && (
-        <div className="bg-white p-10 rounded-3xl shadow-xl border text-gray-800 prose max-w-none text-left">
+        <div className="bg-white p-6 rounded-lg shadow border text-gray-800 prose max-w-none text-left">
           <ReactMarkdown className="prose max-w-none text-gray-800">
             {summaryText}
           </ReactMarkdown>
