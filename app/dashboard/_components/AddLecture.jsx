@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CloudArrowUpIcon, DocumentTextIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, DocumentTextIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import { useUser } from '@clerk/nextjs';
 import { useSummary } from '@/app/context/SummaryContext';
@@ -12,6 +12,7 @@ export default function AddLecture() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [embeddingServiceStatus, setEmbeddingServiceStatus] = useState(null);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [lectureName, setLectureName] = useState('My Lecture');
@@ -84,6 +85,23 @@ export default function AddLecture() {
     setError('');
   };
 
+  const checkEmbeddingService = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/status`);
+      const data = await response.json();
+      setEmbeddingServiceStatus(data.embedding_service_active);
+    } catch (err) {
+      console.error('Failed to check embedding service status:', err);
+      setEmbeddingServiceStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    if (file) {
+      checkEmbeddingService();
+    }
+  }, [file]);
+
   return (
     <div className="max-w-3xl mx-auto p-6">
       <LectureSettingsModal
@@ -132,6 +150,36 @@ export default function AddLecture() {
               <button type="button" onClick={clearFile} className="text-gray-400 hover:text-red-500">
                 <XCircleIcon className="h-6 w-6" />
               </button>
+            </div>
+          )}
+
+          {file && embeddingServiceStatus === false && (
+            <div className="bg-yellow-50 text-yellow-700 p-4 rounded-lg flex flex-col space-y-2 mb-4">
+              <div className="flex items-center space-x-2">
+                <ExclamationTriangleIcon className="h-5 w-5" />
+                <span className="font-semibold">Embedding Service Status: Inactive</span>
+              </div>
+              <p className="text-sm">
+                Chat and recommendations features will be affected. To enable these features, please set up Ollama with the nomic-embed-text model.
+              </p>
+              <a 
+                href="https://ollama.ai/library/nomic-embed-text" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                View Ollama Documentation →
+              </a>
+            </div>
+          )}
+
+          {file && embeddingServiceStatus === true && (
+            <div className="bg-green-50 text-green-700 p-4 rounded-lg flex flex-col space-y-2 mb-4">
+              <div className="flex items-center space-x-2">
+                <DocumentTextIcon className="h-5 w-5" />
+                <span className="font-semibold">Embedding Service Status: Active</span>
+              </div>
+              <p className="text-sm">All features including chat and recommendations will work as expected.</p>
             </div>
           )}
 
