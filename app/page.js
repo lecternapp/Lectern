@@ -2,17 +2,13 @@ import { Button } from "@/components/ui/button";
 import { AiOutlineBook, AiOutlineBarChart, AiOutlineExperiment } from "react-icons/ai";
 import Navbar from "./dashboard/_components/Navbar"; 
 import Link from "next/link";
-import { EmbeddingStatus } from "@/components/ui/EmbeddingStatus";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       
-      {/* Embedding Service Status */}
-      <div className="max-w-7xl mx-auto px-4 py-2">
-        <EmbeddingStatus />
-      </div>
+     
       
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center bg-gradient-to-br from-slate-100 to-blue-50">
