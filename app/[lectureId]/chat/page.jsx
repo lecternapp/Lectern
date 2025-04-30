@@ -223,32 +223,15 @@ export default function ChatPage() {
         <div className="flex items-center justify-center h-full p-4">
           <Alert variant="destructive" className="max-w-2xl">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Missing Embedding</AlertTitle>
+            <AlertTitle>Note: Embedding Service Not Active</AlertTitle>
             <AlertDescription className="mt-2">
-              <p>This lecture is missing an embedding. To use the chat feature:</p>
-              <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>Make sure the embedding service is running</li>
-                <li>Return to the lecture summary page</li>
-                <li>Click the "Regenerate Embedding" button</li>
-                <li>Once complete, return here to use the chat feature</li>
-              </ol>
-              <div className="mt-4">
-                <p className="text-sm font-medium">To set up the embedding service:</p>
-                <a 
-                  href="https://ollama.ai/library/nomic-embed-text" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
-                >
-                  View Ollama nomic-embed-text documentation →
-                </a>
-              </div>
+              <p>Some features such as chat and recommendations may be affected. Coming soon!</p>
             </AlertDescription>
           </Alert>
         </div>
       ) : (
-        <>
-          <ScrollArea className="flex-1 p-4">
+        <div className="flex flex-col h-full">
+          <ScrollArea className="flex-1 p-4 overflow-y-auto">
             {messages.map((message, index) => (
               <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
                 <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start max-w-[90%]`}>
@@ -309,7 +292,7 @@ export default function ChatPage() {
             )}
             <div ref={messagesEndRef} />
           </ScrollArea>
-          <CardFooter className="p-4 border-t">
+          <div className="sticky bottom-0 bg-white border-t p-4">
             <form onSubmit={handleSubmit} className="flex w-full space-x-2">
               <Input
                 value={input}
@@ -328,8 +311,8 @@ export default function ChatPage() {
                 </Button>
               )}
             </form>
-          </CardFooter>
-        </>
+          </div>
+        </div>
       )}
     </div>
   )
