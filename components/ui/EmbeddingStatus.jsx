@@ -69,8 +69,8 @@ export function EmbeddingStatus() {
     return null;
   }
 
-  // If both server and local are active, don't show any warning
-  if (status.server && status.local) {
+  // If either server or local is active, don't show any warning
+  if (status.server || status.local) {
     return null;
   }
 
@@ -88,22 +88,11 @@ export function EmbeddingStatus() {
   }
 
   return (
-    <Alert variant={status.server || status.local ? "warning" : "destructive"} className="mb-4">
+    <Alert variant="destructive" className="mb-4">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Embedding Service Status</AlertTitle>
+      <AlertTitle>Note: Embedding Service Not Active</AlertTitle>
       <AlertDescription>
-        {!status.server && !status.local ? (
-          "The embedding service is not available. Some features may not work properly."
-        ) : !status.server ? (
-          "The server embedding service is not available. Using local embedding service instead."
-        ) : !status.local ? (
-          "The local embedding service is not available. Using server embedding service instead."
-        ) : null}
-        {status.error && (
-          <div className="mt-2 text-xs opacity-80">
-            Error: {status.error}
-          </div>
-        )}
+        Some features such as chat and recommendations may be affected. Coming soon!
       </AlertDescription>
     </Alert>
   );

@@ -157,19 +157,11 @@ export default function AddLecture() {
             <div className="bg-yellow-50 text-yellow-700 p-4 rounded-lg flex flex-col space-y-2 mb-4">
               <div className="flex items-center space-x-2">
                 <ExclamationTriangleIcon className="h-5 w-5" />
-                <span className="font-semibold">Embedding Service Status: Inactive</span>
+                <span className="font-semibold">Note: Embedding Service Not Active</span>
               </div>
               <p className="text-sm">
-                Chat and recommendations features will be affected. To enable these features, please set up Ollama with the nomic-embed-text model.
+                Some features such as chat and recommendations may be affected. Coming soon!
               </p>
-              <a 
-                href="https://ollama.ai/library/nomic-embed-text" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
-              >
-                View Ollama Documentation →
-              </a>
             </div>
           )}
 
