@@ -7,7 +7,8 @@ import { Card, CardFooter } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import ReactMarkdown from 'react-markdown'
-import { Send, Square } from 'lucide-react'
+import { Send, Square, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // Custom styles for markdown content
 const markdownStyles = {
@@ -41,6 +42,8 @@ export default function ChatPage() {
   const [lectureId, setLectureId] = useState('')
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState('')
   const [abortController, setAbortController] = useState(null)
+  const [hasEmbedding, setHasEmbedding] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const messagesEndRef = useRef(null)
   
   useEffect(() => {
@@ -50,6 +53,37 @@ export default function ChatPage() {
       setLectureId(pathParts[1])
     }
   }, [])
+
+  useEffect(() => {
+    const checkEmbedding = async () => {
+      if (!lectureId) return;
+      
+      try {
+        // First check if the embedding service is running
+        const embeddingServiceCheck = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/status`);
+        const embeddingServiceData = await embeddingServiceCheck.json();
+        
+        if (!embeddingServiceData.embedding_service_active) {
+          setHasEmbedding(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // Then check if this specific lecture has an embedding
+        const response = await fetch(`/api/lectures/${lectureId}/embedding`);
+        const data = await response.json();
+        
+        setHasEmbedding(data.hasEmbedding);
+      } catch (error) {
+        console.error('Error checking embedding:', error);
+        setHasEmbedding(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkEmbedding();
+  }, [lectureId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -180,95 +214,123 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl h-[80vh] flex flex-col bg-white text-black">
-        <ScrollArea className="flex-grow p-4">
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-              <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start max-w-[90%]`}>
-                <Avatar className={`w-8 h-8 ${message.role === 'user' ? 'ml-2' : 'mr-2'}`}>
-                  <AvatarFallback className={message.role === 'user' ? 'bg-blue-500' : 'bg-gray-500'}>
-                    {message.role === 'user' ? 'U' : 'AI'}
-                  </AvatarFallback>
-                </Avatar>
-                <div 
-                  className={`px-4 py-2 rounded-lg ${
-                    message.role === 'user' 
-                      ? 'bg-blue-500 text-white rounded-br-none' 
-                      : 'bg-gray-100 text-black rounded-bl-none'
-                  }`}
+    <div className="flex flex-col h-screen max-h-screen">
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      ) : !hasEmbedding ? (
+        <div className="flex items-center justify-center h-full p-4">
+          <Alert variant="destructive" className="max-w-2xl">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Missing Embedding</AlertTitle>
+            <AlertDescription className="mt-2">
+              <p>This lecture is missing an embedding. To use the chat feature:</p>
+              <ol className="list-decimal list-inside mt-2 space-y-1">
+                <li>Make sure the embedding service is running</li>
+                <li>Return to the lecture summary page</li>
+                <li>Click the "Regenerate Embedding" button</li>
+                <li>Once complete, return here to use the chat feature</li>
+              </ol>
+              <div className="mt-4">
+                <p className="text-sm font-medium">To set up the embedding service:</p>
+                <a 
+                  href="https://ollama.ai/library/nomic-embed-text" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
                 >
-                  <ReactMarkdown 
-                    components={MarkdownComponents}
-                    className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
+                  View Ollama nomic-embed-text documentation →
+                </a>
               </div>
-            </div>
-          ))}
-          {currentStreamingMessage && (
-            <div className="flex justify-start mb-4">
-              <div className="flex flex-row items-start max-w-[90%]">
-                <Avatar className="w-8 h-8 mr-2">
-                  <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
-                </Avatar>
-                <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
-                  <ReactMarkdown 
-                    components={MarkdownComponents}
-                    className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : (
+        <>
+          <ScrollArea className="flex-1 p-4">
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+                <div className={`flex ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start max-w-[90%]`}>
+                  <Avatar className={`w-8 h-8 ${message.role === 'user' ? 'ml-2' : 'mr-2'}`}>
+                    <AvatarFallback className={message.role === 'user' ? 'bg-blue-500' : 'bg-gray-500'}>
+                      {message.role === 'user' ? 'U' : 'AI'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div 
+                    className={`px-4 py-2 rounded-lg ${
+                      message.role === 'user' 
+                        ? 'bg-blue-500 text-white rounded-br-none' 
+                        : 'bg-gray-100 text-black rounded-bl-none'
+                    }`}
                   >
-                    {currentStreamingMessage}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            </div>
-          )}
-          {isTyping && !currentStreamingMessage && (
-            <div className="flex justify-start mb-4">
-              <div className="flex flex-row items-start">
-                <Avatar className="w-8 h-8 mr-2">
-                  <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
-                </Avatar>
-                <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <ReactMarkdown 
+                      components={MarkdownComponents}
+                      className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
+                    >
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </ScrollArea>
-        <CardFooter className="border-t border-gray-300 p-4">
-          <form onSubmit={handleSubmit} className="flex w-full space-x-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-grow"
-              disabled={isTyping}
-            />
-            {isTyping ? (
-              <Button 
-                type="button" 
-                onClick={handleStopGeneration}
-                variant="destructive"
-                className="bg-red-500 hover:bg-red-600"
-              >
-                <Square className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button type="submit" disabled={!input.trim()}>
-                <Send className="w-4 h-4" />
-              </Button>
+            ))}
+            {currentStreamingMessage && (
+              <div className="flex justify-start mb-4">
+                <div className="flex flex-row items-start max-w-[90%]">
+                  <Avatar className="w-8 h-8 mr-2">
+                    <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
+                  </Avatar>
+                  <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
+                    <ReactMarkdown 
+                      components={MarkdownComponents}
+                      className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2"
+                    >
+                      {currentStreamingMessage}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
             )}
-          </form>
-        </CardFooter>
-      </Card>
+            {isTyping && !currentStreamingMessage && (
+              <div className="flex justify-start mb-4">
+                <div className="flex flex-row items-start">
+                  <Avatar className="w-8 h-8 mr-2">
+                    <AvatarFallback className="bg-gray-500">AI</AvatarFallback>
+                  </Avatar>
+                  <div className="px-4 py-2 rounded-lg bg-gray-100 text-black rounded-bl-none">
+                    <div className="flex space-x-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </ScrollArea>
+          <CardFooter className="p-4 border-t">
+            <form onSubmit={handleSubmit} className="flex w-full space-x-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a question about the lecture..."
+                disabled={isTyping}
+                className="flex-1"
+              />
+              {isTyping ? (
+                <Button type="button" variant="outline" onClick={handleStopGeneration}>
+                  <Square className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={!input.trim() || isTyping}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
+            </form>
+          </CardFooter>
+        </>
+      )}
     </div>
   )
 }
