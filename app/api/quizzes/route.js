@@ -152,7 +152,7 @@ export async function POST(req) {
         maxOutputTokens: 2048,
       },
       systemInstruction:
-        'You are a quiz creator. Generate 10 multiple-choice questions with 4 options each. Keep questions concise and focused. Each question should be clear and unambiguous.',
+        'You are a quiz creator. Generate 15 multiple-choice questions with 4 options each. Include the correct answer explicitly in the answer field.',
     });
 
     // Add timeout for the AI generation
