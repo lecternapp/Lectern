@@ -25,64 +25,112 @@ export default function GenerateQuiz() {
 
   const question = quiz?.[current];
 
-  useEffect(() => {
-    const loadQuiz = async () => {
-      const storedLectureId = sessionStorage.getItem('quizLectureId');
-      const shouldReload = !quiz?.length || lectureId !== storedLectureId;
+  const loadQuiz = async () => {
+    const storedLectureId = sessionStorage.getItem('quizLectureId');
+    const shouldReload = !quiz?.length || lectureId !== storedLectureId;
 
-      if (quiz?.length && lectureId === storedLectureId) {
-        setLoading(false);
-        return;
-      }
+    if (quiz?.length && lectureId === storedLectureId) {
+      setLoading(false);
+      return;
+    }
 
-      if (shouldReload) {
-        setQuiz(null);
-      }
+    if (shouldReload) {
+      setQuiz(null);
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        const response = await fetch(`/api/quizzes`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lectureId, summary }),
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          console.error("Quiz API error:", data.error);
-          
-          // Retry on timeout errors
-          if (response.status === 504 && retryCount < MAX_RETRIES) {
-            console.log(`Retrying quiz generation (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
-            setRetryCount(prev => prev + 1);
-            setTimeout(loadQuiz, 2000); // Wait 2 seconds before retrying
-            return;
-          }
-          
-          throw new Error(data.error || "Failed to load quiz");
-        }
-
-        if (data.summary && !summary) {
-          setSummary(data.summary);
-        }
-
-        if (data.quizQuestions && data.quizQuestions.length > 0) {
-          console.log(`✅ Loaded ${data.quizQuestions.length} quiz questions`);
-          setQuiz(data.quizQuestions);
+    try {
+      // Add a timeout to the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second timeout
+      
+      // Check if we have a cached quiz in sessionStorage
+      const cachedQuiz = sessionStorage.getItem(`quiz_${lectureId}`);
+      if (cachedQuiz) {
+        try {
+          const parsedQuiz = JSON.parse(cachedQuiz);
+          console.log('✅ Using cached quiz from sessionStorage');
+          setQuiz(parsedQuiz);
           sessionStorage.setItem('quizLectureId', lectureId);
-        } else {
-          console.error("No quiz questions in response:", data);
-          throw new Error("Quiz data missing from response");
+          setLoading(false);
+          clearTimeout(timeoutId);
+          return;
+        } catch (e) {
+          console.log('❌ Failed to parse cached quiz, fetching from server');
+          sessionStorage.removeItem(`quiz_${lectureId}`);
         }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      const response = await fetch(`/api/quizzes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lectureId, summary }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("Quiz API error:", data.error);
+        
+        // Retry on timeout errors or network issues
+        if ((response.status === 504 || response.status === 0 || data.error?.includes('timeout')) && retryCount < MAX_RETRIES) {
+          console.log(`Retrying quiz generation (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(loadQuiz, 2000 * (retryCount + 1)); // Exponential backoff
+          return;
+        }
+        
+        // If we've exhausted retries or it's not a timeout error, use fallback
+        if (retryCount >= MAX_RETRIES || (response.status !== 504 && response.status !== 0 && !data.error?.includes('timeout'))) {
+          console.log("Using fallback quiz generation");
+          const fallbackQuiz = generateFallbackQuiz(summary?.summary || `Lecture ${lectureId}`);
+          setQuiz(fallbackQuiz);
+          sessionStorage.setItem('quizLectureId', lectureId);
+          sessionStorage.setItem(`quiz_${lectureId}`, JSON.stringify(fallbackQuiz));
+          setLoading(false);
+          return;
+        }
+        
+        throw new Error(data.error || "Failed to load quiz");
+      }
+
+      if (data.summary && !summary) {
+        setSummary(data.summary);
+      }
+
+      if (data.quizQuestions && data.quizQuestions.length > 0) {
+        console.log(`✅ Loaded ${data.quizQuestions.length} quiz questions`);
+        setQuiz(data.quizQuestions);
+        sessionStorage.setItem('quizLectureId', lectureId);
+        sessionStorage.setItem(`quiz_${lectureId}`, JSON.stringify(data.quizQuestions));
+      } else {
+        console.error("No quiz questions in response:", data);
+        throw new Error("Quiz data missing from response");
+      }
+    } catch (err) {
+      console.error("Quiz loading error:", err);
+      
+      // Use fallback quiz on any error
+      console.log("Using fallback quiz generation due to error");
+      const fallbackQuiz = generateFallbackQuiz(summary?.summary || `Lecture ${lectureId}`);
+      setQuiz(fallbackQuiz);
+      sessionStorage.setItem('quizLectureId', lectureId);
+      sessionStorage.setItem(`quiz_${lectureId}`, JSON.stringify(fallbackQuiz));
+      
+      // Only set error if we're not using fallback
+      if (!usingFallback) {
+        setError(err.message || "Failed to load quiz");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadQuiz();
   }, [lectureId]);
 
@@ -148,9 +196,7 @@ export default function GenerateQuiz() {
             setError(null);
             setRetryCount(0);
             setLoading(true);
-            setTimeout(() => {
-              loadQuiz();
-            }, 1000);
+            loadQuiz();
           }}
           className="mt-4"
         >

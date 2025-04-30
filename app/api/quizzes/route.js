@@ -82,11 +82,17 @@ export async function POST(req) {
       return NextResponse.json({ error: 'lectureId is required' }, { status: 400 });
     }
 
-    // Check DB for existing quiz questions
+    // Check DB for existing quiz questions with a timeout
+    const dbTimeout = setTimeout(() => {
+      console.error('Database query timeout');
+    }, 5000); // 5 second timeout for DB queries
+
     const existingQuestions = await db
       .select()
       .from(quizQuestionsTable)
       .where(eq(quizQuestionsTable.summaryId, lectureId));
+
+    clearTimeout(dbTimeout);
 
     if (existingQuestions.length) {
       console.log('✅ Found existing quiz questions in DB');
@@ -110,9 +116,9 @@ export async function POST(req) {
     }
 
     // Truncate summary text if it's too long (to prevent timeouts)
-    if (summaryText && summaryText.length > 10000) {
+    if (summaryText && summaryText.length > 8000) {
       console.log('⚠️ Truncating long summary text to prevent timeouts');
-      summaryText = summaryText.substring(0, 10000) + '...';
+      summaryText = summaryText.substring(0, 8000) + '...';
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -136,18 +142,29 @@ export async function POST(req) {
     };
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro-latest',
+      model: 'gemini-1.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema,
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 2048,
       },
       systemInstruction:
-        'You are a quiz creator. Generate 21 multiple-choice questions with 4 options each. Include the correct answer explicitly in the answer field.',
+        'You are a quiz creator. Generate 10 multiple-choice questions with 4 options each. Keep questions concise and focused. Each question should be clear and unambiguous.',
     });
 
-    const result = await model.generateContent({
+    // Add timeout for the AI generation
+    const generationPromise = model.generateContent({
       contents: [{ role: 'user', parts: [{ text: summaryText }] }],
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Quiz generation timeout')), 25000); // 25 second timeout
+    });
+
+    const result = await Promise.race([generationPromise, timeoutPromise]);
 
     const jsonText = await result.response.text();
     let generatedQuestions;
@@ -157,6 +174,7 @@ export async function POST(req) {
         ? JSON.parse(jsonText)
         : jsonText;
     } catch (error) {
+      console.error('Error parsing generated quiz:', error);
       return NextResponse.json({ error: 'Error parsing generated quiz' }, { status: 500 });
     }
 
@@ -185,7 +203,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'No valid quiz questions generated' }, { status: 500 });
     }
 
+    // Add timeout for the DB insert
+    const insertTimeout = setTimeout(() => {
+      console.error('Database insert timeout');
+    }, 5000);
+
     await db.insert(quizQuestionsTable).values(validQuizInserts);
+    clearTimeout(insertTimeout);
+
     console.log(`💾 Saved ${validQuizInserts.length} quiz questions to DB`);
 
     return NextResponse.json({ success: true, quizQuestions: validQuizInserts });
