@@ -126,10 +126,7 @@ export default function SummaryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const contextMatchesCurrentLecture =
-    contextSummary &&
-    contextSummary.lectureId === lectureId &&
-    !!contextSummary.summary;
+  const isFromContext = !!contextSummary && !!contextSummary.summary;
 
   useEffect(() => {
     async function fetchSummary() {
@@ -146,7 +143,7 @@ export default function SummaryPage() {
         setSummaryDescription(data.description || '');
 
         if (data) {
-          setSummary({ ...data, lectureId }); // ⬅️ store lectureId in context
+          setSummary(data); // Save full object in context
           console.log('🧠 Summary fetched and stored in context');
         }
       } catch (err) {
@@ -156,7 +153,7 @@ export default function SummaryPage() {
       }
     }
 
-    if (contextMatchesCurrentLecture) {
+    if (isFromContext) {
       console.log('🧠 Summary pulled from context');
       setSummaryText(contextSummary.summary || '');
       setSummaryTitle(contextSummary.title || 'Summary');
@@ -165,7 +162,7 @@ export default function SummaryPage() {
     } else if (lectureId) {
       fetchSummary();
     }
-  }, [lectureId, contextSummary, setSummary]);
+  }, [lectureId, isFromContext, contextSummary, setSummary]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-10">

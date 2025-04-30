@@ -1,6 +1,8 @@
 import React from 'react'
+import Image from 'next/image'
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
+import { Lectern } from 'lucide-react'
 function Header() {
   return (
     //Can add search bar here

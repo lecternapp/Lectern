@@ -14,21 +14,16 @@ const fallbackColors = [
   "bg-pink-500",
 ];
 
-// Utility function: show "New" if lecture was created in the last 10 minutes
-const isNewLecture = (createdAt) => {
-  if (!createdAt) return false;
-  const now = new Date();
-  const created = new Date(createdAt);
-  const diffInMinutes = (now - created) / 1000 / 60;
-  return diffInMinutes < 10;
+const getAbbreviatedId = (id) => {
+  return id?.length > 8 ? `${id.slice(0, 8)}...` : id;
 };
 
 export default function LecturesPage() {
-  const { summaries, setSummaries, setSummary } = useSummary();
+  const { summaries, setSummaries } = useSummary();
   const { user } = useUser();
   const userId = user?.id;
 
-  const [lectures, setLectures] = useState(summaries || []);
+  const [lectures, setLectures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,7 +34,11 @@ export default function LecturesPage() {
     const loadLectures = async () => {
       if (!userId) return;
 
-      setLectures(summaries || []); // Show cached immediately
+      if (summaries && summaries.length > 0) {
+        setLectures(summaries);
+        setLoading(false);
+        return;
+      }
 
       try {
         const res = await fetch(`/api/lectures?user_id=${userId}`);
@@ -50,7 +49,6 @@ export default function LecturesPage() {
         setLectures(lectureList);
         setSummaries(lectureList);
       } catch (err) {
-        console.error("Failed to refresh lecture list:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -58,7 +56,7 @@ export default function LecturesPage() {
     };
 
     loadLectures();
-  }, [userId, setSummaries]);
+  }, [userId, summaries, setSummaries]);
 
   const handleEditClick = (lecture, e) => {
     e.stopPropagation();
@@ -74,44 +72,33 @@ export default function LecturesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLecture),
       });
-
+  
       const responseBody = await res.json();
-
+  
       if (!res.ok) {
-        console.error("Server error:", responseBody);
+        console.error("Server error:", responseBody); // 👈 log error details
         throw new Error("Failed to update lecture");
       }
-
+  
       const updatedFromServer = responseBody;
-
+  
       const updatedLectures = lectures.map((lec) =>
         lec.id === updatedFromServer.id ? updatedFromServer : lec
       );
-
-      setLectures(updatedLectures);
-      setSummaries(updatedLectures);
+  
+      setLectures([...updatedLectures]);
+      setSummaries([...updatedLectures]);
       setModalOpen(false);
     } catch (err) {
       console.error("Error updating lecture:", err);
     }
   };
+  
+  
 
-  if (loading && lectures.length === 0) {
-    return (
-      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="h-48 bg-gray-100 animate-pulse rounded-xl shadow"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (error && lectures.length === 0) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
-  }
+  if (loading)
+    return <div className="p-6 text-gray-600">Loading lectures...</div>;
+  if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
 
   return (
     <div className="p-6">
@@ -119,16 +106,14 @@ export default function LecturesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {lectures.map((lecture, index) => (
           <div key={lecture.id} className="relative">
-            <Link
-              href={`/${lecture.id}/summary`}
-              onClick={() => setSummary(null)}
-            >
+            <Link href={`/${lecture.id}/summary`}>
               <div className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer">
                 <div
                   className={`h-32 w-full rounded-t-xl ${
                     fallbackColors[index % fallbackColors.length]
                   } relative`}
                 >
+                  {/* Triple Dot Button */}
                   <button
                     onClick={(e) => handleEditClick(lecture, e)}
                     className="absolute top-2 right-2 p-1 rounded-full bg-white/70 hover:bg-white shadow"
@@ -137,12 +122,6 @@ export default function LecturesPage() {
                   </button>
                 </div>
                 <div className="p-4">
-                  {/* 🆕 New tag */}
-                  {isNewLecture(lecture.createdAt || lecture.created_at) && (
-                    <span className="inline-block mb-2 mr-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      New
-                    </span>
-                  )}
                   <h2 className="text-xl font-semibold">
                     {lecture.summaryTitle || "Untitled Lecture"}
                   </h2>
