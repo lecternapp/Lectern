@@ -13,6 +13,8 @@ export default function GenerateQuiz() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
@@ -48,16 +50,30 @@ export default function GenerateQuiz() {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Failed to load quiz");
+        if (!response.ok) {
+          console.error("Quiz API error:", data.error);
+          
+          // Retry on timeout errors
+          if (response.status === 504 && retryCount < MAX_RETRIES) {
+            console.log(`Retrying quiz generation (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+            setRetryCount(prev => prev + 1);
+            setTimeout(loadQuiz, 2000); // Wait 2 seconds before retrying
+            return;
+          }
+          
+          throw new Error(data.error || "Failed to load quiz");
+        }
 
         if (data.summary && !summary) {
           setSummary(data.summary);
         }
 
-        if (data.quizQuestions) {
+        if (data.quizQuestions && data.quizQuestions.length > 0) {
+          console.log(`✅ Loaded ${data.quizQuestions.length} quiz questions`);
           setQuiz(data.quizQuestions);
           sessionStorage.setItem('quizLectureId', lectureId);
         } else {
+          console.error("No quiz questions in response:", data);
           throw new Error("Quiz data missing from response");
         }
       } catch (err) {
@@ -127,6 +143,19 @@ export default function GenerateQuiz() {
           Quiz: {summary?.title || `Lecture ${lectureId}`}
         </h2>
         <p className="text-red-500 text-sm">{error}</p>
+        <Button 
+          onClick={() => {
+            setError(null);
+            setRetryCount(0);
+            setLoading(true);
+            setTimeout(() => {
+              loadQuiz();
+            }, 1000);
+          }}
+          className="mt-4"
+        >
+          Try Again
+        </Button>
       </div>
     );
   }
