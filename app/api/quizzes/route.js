@@ -142,7 +142,7 @@ export async function POST(req) {
         responseSchema: schema,
       },
       systemInstruction:
-        'You are a quiz creator. Generate 21 multiple-choice questions with 4 options each. Include the correct answer explicitly in the answer field.',
+        'You are a quiz creator. Generate 15 multiple-choice questions with 4 options each. Include the correct answer explicitly in the answer field.',
     });
 
     const result = await model.generateContent({
