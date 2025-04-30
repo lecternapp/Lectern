@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AiOutlineHome,  AiOutlineCompass, AiOutlineRocket,AiOutlineFileText, AiOutlineLogout } from "react-icons/ai";
 import { usePathname } from 'next/navigation';
 import { LuLectern } from "react-icons/lu";
-import { useClerk } from '@clerk/nextjs';
+import { useClerk } from '@clerk/clerk-react';
 function Sidebar() {
 
   const { signOut } = useClerk(); // Clerk's signOut method

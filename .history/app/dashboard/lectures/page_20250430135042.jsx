@@ -14,15 +14,6 @@ const fallbackColors = [
   "bg-pink-500",
 ];
 
-// Utility function: show "New" if lecture was created in the last 10 minutes
-const isNewLecture = (createdAt) => {
-  if (!createdAt) return false;
-  const now = new Date();
-  const created = new Date(createdAt);
-  const diffInMinutes = (now - created) / 1000 / 60;
-  return diffInMinutes < 10;
-};
-
 export default function LecturesPage() {
   const { summaries, setSummaries, setSummary } = useSummary();
   const { user } = useUser();
@@ -39,8 +30,9 @@ export default function LecturesPage() {
     const loadLectures = async () => {
       if (!userId) return;
 
-      setLectures(summaries || []); // Show cached immediately
+      // Show cached summaries instantly (already handled by default useState above)
 
+      // Fetch fresh data in background
       try {
         const res = await fetch(`/api/lectures?user_id=${userId}`);
         const data = await res.json();
@@ -48,7 +40,7 @@ export default function LecturesPage() {
 
         const lectureList = data.lectures || [];
         setLectures(lectureList);
-        setSummaries(lectureList);
+        setSummaries(lectureList); // update context with fresh data
       } catch (err) {
         console.error("Failed to refresh lecture list:", err);
         setError(err.message);
@@ -137,12 +129,6 @@ export default function LecturesPage() {
                   </button>
                 </div>
                 <div className="p-4">
-                  {/* 🆕 New tag */}
-                  {isNewLecture(lecture.createdAt || lecture.created_at) && (
-                    <span className="inline-block mb-2 mr-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      New
-                    </span>
-                  )}
                   <h2 className="text-xl font-semibold">
                     {lecture.summaryTitle || "Untitled Lecture"}
                   </h2>
