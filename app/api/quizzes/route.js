@@ -109,6 +109,12 @@ export async function POST(req) {
       summaryText = summaryResult[0].summary ?? '';
     }
 
+    // Truncate summary text if it's too long (to prevent timeouts)
+    if (summaryText && summaryText.length > 10000) {
+      console.log('⚠️ Truncating long summary text to prevent timeouts');
+      summaryText = summaryText.substring(0, 10000) + '...';
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const schema = {

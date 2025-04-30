@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { AiOutlineBook, AiOutlineBarChart, AiOutlineExperiment } from "react-icons/ai";
 import Navbar from "./dashboard/_components/Navbar"; 
 import Link from "next/link";
-
+  
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
