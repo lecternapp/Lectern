@@ -13,8 +13,12 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 relative flex flex-col md:flex-row items-center p-4">
         {/* Logo on the Left */}
         <div className="flex items-center mb-4 md:mb-0 md:absolute md:left-4">
-          <LuLectern size={48} className="text-primary" />
-          <span className="ml-2 text-2xl font-bold text-primary">Lectern</span>
+          <Link href="/">
+            <div className="flex items-center">
+              <LuLectern size={48} className="text-primary" />
+              <span className="ml-2 text-2xl font-bold text-primary">Lectern</span>
+            </div>
+          </Link>
         </div>
 
         {/* Navigation Links in the Center */}
@@ -32,9 +36,9 @@ function Navbar() {
 
           <li>
             <Link
-              href="/dashboard/upgrade"
+              href="/upgrade"
               className={`hover:text-primary hover:font-bold transition-all cursor-pointer ${
-                path === '/dashboard/upgrade' && 'text-primary font-bold'
+                path === '/upgrade' && 'text-primary font-bold'
               }`}
             >
               Upgrade
@@ -43,9 +47,9 @@ function Navbar() {
 
           <li>
             <Link
-              href="/dashboard/how"
+              href="/how-it-works"
               className={`hover:text-primary hover:font-bold transition-all cursor-pointer ${
-                path === '/dashboard/how' && 'text-primary font-bold'
+                path === '/how-it-works' && 'text-primary font-bold'
               }`}
             >
               How it Works
